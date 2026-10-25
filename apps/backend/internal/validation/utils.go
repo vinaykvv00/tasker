@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/sriniously/go-boilerplate/internal/errs"
+	"github.com/sriniously/go-tasker/internal/errs"
 )
 
 type Validatable interface {
@@ -50,7 +50,10 @@ func extractValidationErrors(err error) (string, []errs.FieldError) {
 	var fieldErrors []errs.FieldError
 	validationErrors, ok := err.(validator.ValidationErrors)
 	if !ok {
-		customValidationErrors := err.(CustomValidationErrors)
+		customValidationErrors, ok := err.(CustomValidationErrors)
+		if !ok {
+			return "Validation failed", []errs.FieldError{{Field: "", Error: err.Error()}}
+		}
 		for _, err := range customValidationErrors {
 			fieldErrors = append(fieldErrors, errs.FieldError{
 				Field: err.Field,

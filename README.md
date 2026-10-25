@@ -1,4 +1,4 @@
-# Go Boilerplate
+# Go tasker
 
 A production-ready monorepo template for building scalable web applications with Go backend and TypeScript frontend. Built with modern best practices, clean architecture, and comprehensive tooling.
 
@@ -18,7 +18,7 @@ A production-ready monorepo template for building scalable web applications with
 ## Project Structure
 
 ```
-go-boilerplate/
+go-tasker/
 ├── apps/backend/          # Go backend application
 ├── packages/         # Frontend packages (React, Vue, etc.)
 ├── package.json      # Monorepo configuration
@@ -39,8 +39,8 @@ go-boilerplate/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/sriniously/go-boilerplate.git
-cd go-boilerplate
+git clone https://github.com/sriniously/go-tasker.git
+cd go-tasker
 ```
 
 2. Install dependencies:
@@ -100,20 +100,20 @@ bun lint               # Lint all packages
 
 ### Environment Variables
 
-The backend uses environment variables prefixed with `BOILERPLATE_`. Key variables include:
+The backend uses environment variables prefixed with `tasker_`. Key variables include:
 
-- `BOILERPLATE_DATABASE_*` - PostgreSQL connection settings
-- `BOILERPLATE_SERVER_*` - Server configuration
-- `BOILERPLATE_AUTH_*` - Authentication settings
-- `BOILERPLATE_REDIS_*` - Redis connection
-- `BOILERPLATE_EMAIL_*` - Email service configuration
-- `BOILERPLATE_OBSERVABILITY_*` - Monitoring settings
+- `tasker_DATABASE_*` - PostgreSQL connection settings
+- `tasker_SERVER_*` - Server configuration
+- `tasker_AUTH_*` - Authentication settings
+- `tasker_REDIS_*` - Redis connection
+- `tasker_EMAIL_*` - Email service configuration
+- `tasker_OBSERVABILITY_*` - Monitoring settings
 
 See `apps/backend/.env.example` for a complete list.
 
 ## Architecture
 
-This boilerplate follows clean architecture principles:
+This tasker follows clean architecture principles:
 
 - **Handlers**: HTTP request/response handling
 - **Services**: Business logic implementation

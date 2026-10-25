@@ -5,10 +5,11 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
-	"github.com/sriniously/go-boilerplate/internal/handler"
-	"github.com/sriniously/go-boilerplate/internal/middleware"
-	"github.com/sriniously/go-boilerplate/internal/server"
-	"github.com/sriniously/go-boilerplate/internal/service"
+	"github.com/sriniously/go-tasker/internal/handler"
+	"github.com/sriniously/go-tasker/internal/middleware"
+	v1 "github.com/sriniously/go-tasker/internal/router/v1"
+	"github.com/sriniously/go-tasker/internal/server"
+	"github.com/sriniously/go-tasker/internal/service"
 	"golang.org/x/time/rate"
 )
 
@@ -54,7 +55,10 @@ func NewRouter(s *server.Server, h *handler.Handlers, services *service.Services
 	registerSystemRoutes(router, h)
 
 	// register versioned routes
-	router.Group("/api/v1")
+	// "github.com/sriniously/go-tasker/internal/router/v1"
+
+	v1Router := router.Group("/api/v1")
+	v1.RegisterV1Routes(v1Router, h, middlewares)
 
 	return router
 }

@@ -1,14 +1,30 @@
-# Go Boilerplate Backend
+# Tasker Go Backend
 
-A production-ready Go backend service built with Echo framework, featuring clean architecture, comprehensive middleware, and modern DevOps practices.
+A Go/Echo backend built from a boilerplate and extended with Todo, Category, and Comment models and repositories. Feature services and HTTP routes are still being built. Existing helpers are not a production-readiness guarantee.
+
+## Start Learning Here
+
+**[docs/README.md](docs/README.md)** is the beginner reading path, folder/file map, and current feature-status overview.
+
+| Read | For |
+| --- | --- |
+| [docs/go-reading-basics.md](docs/go-reading-basics.md) | Go syntax as used in this code |
+| [internal/server/README.md](internal/server/README.md) | Startup, shared resources, and shutdown |
+| [internal/model/README.md](internal/model/README.md) | Models, DTOs, tags, pointers, and defaults |
+| [internal/repository/README.md](internal/repository/README.md) | SQL, pgx, mapping, filtering, and CRUD |
+| [internal/service/README.md](internal/service/README.md) | Current wiring and planned business rules |
+| [docs/building-a-feature.md](docs/building-a-feature.md) | Connect an operation to authenticated HTTP |
+| [docs/local-development.md](docs/local-development.md) | Run, inspect, and troubleshoot safely |
+
+Each major internal folder has a README mapping its source files. Shared patterns are explained once rather than repeated for every CRUD method.
 
 ## Architecture Overview
 
-This backend follows clean architecture principles with clear separation of concerns:
+The intended request flow is router/middleware -> handler -> service -> repository -> pgxpool -> PostgreSQL. Models are values passed between these layers, not another running service.
 
 ```
 backend/
-├── cmd/go-boilerplate/        # Application entry point
+├── cmd/tasker/           # Application entry point
 ├── internal/                  # Private application code
 │   ├── config/               # Configuration management
 │   ├── database/             # Database connections and migrations
@@ -24,213 +40,45 @@ backend/
 └── Taskfile.yml              # Task automation
 ```
 
-## Features
+## Current State
 
-### Core Framework
-- **Echo v4**: High-performance, minimalist web framework
-- **Clean Architecture**: Handlers → Services → Repositories → Models
-- **Dependency Injection**: Constructor-based DI for testability
+The executable is [cmd/tasker/main.go](cmd/tasker/main.go). It constructs config, logging, a PostgreSQL pool, a Redis client, an Asynq worker, registries, and Echo. The worker currently runs inside the Go process; PostgreSQL and Redis run externally.
 
-### Database
-- **PostgreSQL**: Primary database with pgx/v5 driver
-- **Migration System**: Tern for schema versioning
-- **Connection Pooling**: Optimized for production workloads
-- **Transaction Support**: ACID compliance for critical operations
+The service registry exposes Auth and Job. The HTTP registry exposes Health and OpenAPI. Todo, Category, and Comment repositories are constructed, but are not connected through feature services and routes. Clerk middleware exists but is not attached to feature routes yet.
 
-### Authentication & Security
-- **Clerk Integration**: Modern authentication service
-- **JWT Validation**: Secure token verification
-- **Role-Based Access**: Configurable permission system
-- **Rate Limiting**: 20 requests/second per IP
-- **Security Headers**: XSS, CSRF, and clickjacking protection
-
-### Observability
-- **New Relic APM**: Application performance monitoring
-- **Structured Logging**: JSON logs with Zerolog
-- **Request Tracing**: Distributed tracing support
-- **Health Checks**: Readiness and liveness endpoints
-- **Custom Metrics**: Business-specific monitoring
-
-### Background Jobs
-- **Asynq**: Redis-based distributed task queue
-- **Priority Queues**: Critical, default, and low priority
-- **Job Scheduling**: Cron-like task scheduling
-- **Retry Logic**: Exponential backoff for failed jobs
-- **Job Monitoring**: Real-time job status tracking
-
-### Email Service
-- **Resend Integration**: Reliable email delivery
-- **HTML Templates**: Beautiful transactional emails
-- **Preview Mode**: Test emails in development
-- **Batch Sending**: Efficient bulk operations
-
-### API Documentation
-- **OpenAPI 3.0**: Complete API specification
-- **Swagger UI**: Interactive API explorer
-- **Auto-generation**: Code-first approach
+The current HTTP surface is `GET /status`, `GET /docs`, and `/static/*`. There is no backend root page or registered Todo API. Inspect individual health checks: Redis failure currently does not change the overall healthy/200 response.
 
 ## Getting Started
 
-### Prerequisites
-- Go 1.24+
-- PostgreSQL 16+
-- Redis 8+
-- Task (taskfile.dev)
+Follow [docs/local-development.md](docs/local-development.md), including its security notes, before starting infrastructure. Current Compose uses passwordless services and broadly published ports; it is not a deployment template.
 
-### Installation
+Use Go 1.24.5 or newer, Task, Docker/Compose, and the Tern CLI for manual migrations. Run backend commands from this directory. Keep credentials in an ignored local environment file; [.env.sample](.env.sample) is a template, not a guarantee of working values.
 
-1. Install dependencies:
-```bash
-go mod download
-```
-
-2. Set up environment:
-```bash
-cp .env.example .env
-# Configure your environment variables
-```
-
-3. Run migrations:
-```bash
-task migrations:up
-```
-
-4. Start the server:
-```bash
-task run
-```
-
-## Configuration
-
-Configuration is managed through environment variables with the `BOILERPLATE_` prefix:
+Configuration keys use the `tasker_` prefix and dots, such as `tasker_DATABASE.HOST`. Main skips automatic migrations in local mode. The Taskfile migration command needs its own DSN.
 
 ## Development
 
 ### Available Tasks
 
-```bash
-task help                    # Show all available tasks
-task run                     # Run the application
-task test                    # Run tests
-task migrations:new name=X   # Create new migration
-task migrations:up           # Apply migrations
-task migrations:down         # Rollback last migration
-task tidy                    # Format and tidy dependencies
-```
+| Command | Effect |
+| --- | --- |
+| `task --list-all` | List actual tasks |
+| `task run` | Run `go run ./cmd/tasker` |
+| `task migrations:new name=example` | Create a migration file, without applying it |
+| `task migrations:up tasker_DB_DSN="..."` | Apply reviewed migrations to the selected database after confirmation |
+| `go test ./...` | Run available Go tests; tests using containers require Docker |
+| `task tidy` | Format Go, tidy dependencies, and verify modules; changes files |
 
-### Project Structure
+There is no current `task test` or `migrations:down` task.
 
-#### Handlers (`internal/handler/`)
-HTTP request handlers that:
-- Parse and validate requests
-- Call appropriate services
-- Format responses
-- Handle HTTP-specific concerns
+## Before Extending or Deploying
 
-#### Services (`internal/service/`)
-Business logic layer that:
-- Implements use cases
-- Orchestrates operations
-- Enforces business rules
-- Handles transactions
+Read the current limitations beside each folder's explanation, particularly DTO validation, user-scoped search SQL, populated Todo joins, handler request allocation, and unused pool settings. Add tests for those behaviors rather than relying on startup logs.
 
-#### Repositories (`internal/repository/`)
-Data access layer that:
-- Encapsulates database queries
-- Provides data mapping
-- Handles database-specific logic
-- Supports multiple data sources
+For general database concepts, see [../../docs/database/README.md](../../docs/database/README.md). For safe test isolation, see [internal/testing/README.md](internal/testing/README.md). Logging and telemetry are explained in [internal/logger/README.md](internal/logger/README.md).
 
-#### Models (`internal/model/`)
-Domain entities that:
-- Define core business objects
-- Include validation rules
-- Remain database-agnostic
-
-#### Middleware (`internal/middleware/`)
-Cross-cutting concerns:
-- Authentication/Authorization
-- Request logging
-- Error handling
-- Rate limiting
-- CORS
-- Security headers
-
-### Testing
-
-#### Unit Tests
-```bash
-go test ./...
-```
-
-## Logging
-
-Structured logging with Zerolog:
-
-```go
-log.Info().
-    Str("user_id", userID).
-    Str("action", "login").
-    Msg("User logged in successfully")
-```
-
-Log levels:
-- `debug`: Detailed debugging information
-- `info`: General informational messages
-- `warn`: Warning messages
-- `error`: Error messages
-- `fatal`: Fatal errors that cause shutdown
-
-### Production Checklist
-
-- [ ] Set production environment variables
-- [ ] Enable SSL/TLS
-- [ ] Configure production database
-- [ ] Set up monitoring alerts
-- [ ] Configure log aggregation
-- [ ] Enable rate limiting
-- [ ] Set up backup strategy
-- [ ] Configure auto-scaling
-- [ ] Implement graceful shutdown
-- [ ] Set up CI/CD pipeline
-
-## Performance Optimization
-
-### Database
-- Connection pooling configured
-- Prepared statements for frequent queries
-- Indexes on commonly queried fields
-- Query optimization with EXPLAIN ANALYZE
-
-### Caching
-- Redis for session storage
-- In-memory caching for hot data
-- HTTP caching headers
-
-### Concurrency
-- Goroutine pools for parallel processing
-- Context-based cancellation
-- Proper mutex usage
-
-## Security Best Practices
-
-1. **Input Validation**: All inputs validated and sanitized
-2. **SQL Injection**: Parameterized queries only
-3. **XSS Protection**: Output encoding and CSP headers
-4. **CSRF Protection**: Token-based protection
-5. **Rate Limiting**: Per-IP and per-user limits
-6. **Secrets Management**: Environment variables, never in code
-7. **HTTPS Only**: Enforce TLS in production
-8. **Dependency Scanning**: Regular vulnerability checks
-
-## Contributing
-
-1. Follow Go best practices and idioms
-2. Write tests for new features
-3. Update documentation
-4. Run linters before committing
-5. Keep commits atomic and well-described
+The frontend loading, a successful DB ping, or a helper existing on disk does not verify the entire application's behavior. Keep code, migrations, contracts, and tests aligned as you add each feature.
 
 ## License
 
-See the parent project's LICENSE file.
+See [../../LICENSE](../../LICENSE).
