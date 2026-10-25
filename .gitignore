@@ -56,3 +56,4 @@ tsconfig.tsbuildinfo
 .env
 .turbo
 .vscode
+/cloned_repo
