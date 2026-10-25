@@ -5,9 +5,8 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"github.com/sriniously/go-tasker/internal/errs"
 	"github.com/sriniously/go-tasker/internal/lib/aws"
 	"github.com/sriniously/go-tasker/internal/middleware"
@@ -25,7 +24,8 @@ type TodoService struct {
 }
 
 func NewTodoService(server *server.Server, todoRepo *repository.TodoRepository,
-	categoryRepo *repository.CategoryRepository, awsClient *aws.AWS) *TodoService {
+	categoryRepo *repository.CategoryRepository, awsClient *aws.AWS,
+) *TodoService {
 	return &TodoService{
 		server:       server,
 		todoRepo:     todoRepo,

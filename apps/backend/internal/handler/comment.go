@@ -22,8 +22,6 @@ func NewCommentHandler(s *server.Server, commentService *service.CommentService)
 	}
 }
 
-// TodoID uuid.UUID `param:"id" validate:"required,uuid"`
-
 func (h *CommentHandler) AddComment(c echo.Context) error {
 	return Handle(
 		h.Handler,

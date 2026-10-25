@@ -61,7 +61,6 @@ func (ls *LoggerService) GetApplication() *newrelic.Application {
 	return ls.nrApp
 }
 
-
 // NewLoggerWithService creates a logger with full config and logger service
 func NewLoggerWithService(cfg *config.ObservabilityConfig, loggerService *LoggerService) zerolog.Logger {
 	var logLevel zerolog.Level

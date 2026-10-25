@@ -3,19 +3,19 @@ package email
 import (
 	"fmt"
 	"time"
-	"uuid"
 
+	"github.com/google/uuid"
 	"github.com/sriniously/go-tasker/internal/model/todo"
 )
 
 func (c *Client) SendWelcomeEmail(to, firstName string) error {
-	data := map[string]string{
+	data := map[string]any{
 		"UserFirstName": firstName,
 	}
 
 	return c.SendEmail(
 		to,
-		"Welcome to tasker!",
+		"Welcome to Boilerplate!",
 		TemplateWelcome,
 		data,
 	)

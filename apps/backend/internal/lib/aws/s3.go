@@ -18,15 +18,10 @@ type S3Client struct {
 	client *s3.Client
 }
 
-func NewS3Client(server *server.Server, cfg aws.Config, usePathStyle bool) *S3Client {
+func NewS3Client(server *server.Server, cfg aws.Config) *S3Client {
 	return &S3Client{
 		server: server,
-		client: s3.NewFromConfig(cfg, func(o *s3.Options) {
-			o.UsePathStyle = usePathStyle
-			// R2/other S3-compatible stores reject the SDK's default checksum extensions on signed requests
-			o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
-			o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
-		}),
+		client: s3.NewFromConfig(cfg),
 	}
 }
 

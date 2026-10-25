@@ -7,7 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// create todo payload post request client will send the information to create a new todo item
+// ------------------------------------------------------------
+
 type CreateTodoPayload struct {
 	Title        string     `json:"title" validate:"required,min=1,max=255"`
 	Description  *string    `json:"description" validate:"omitempty,max=1000"`
@@ -23,7 +24,8 @@ func (p *CreateTodoPayload) Validate() error {
 	return validate.Struct(p)
 }
 
-// update todo payload put/patch request client will send the information to update an existing todo item
+// ------------------------------------------------------------
+
 type UpdateTodoPayload struct {
 	ID           uuid.UUID  `param:"id" validate:"required,uuid"`
 	Title        *string    `json:"title" validate:"omitempty,min=1,max=255"`
@@ -41,11 +43,12 @@ func (p *UpdateTodoPayload) Validate() error {
 	return validate.Struct(p)
 }
 
-// get end points payload for fetching todo items none of them parameters are required so pointers are uses to distinguish between actual and missing values
+// ------------------------------------------------------------
+
 type GetTodosQuery struct {
 	Page         *int       `query:"page" validate:"omitempty,min=1"`
 	Limit        *int       `query:"limit" validate:"omitempty,min=1,max=100"`
-	Sort         *string    `query:"sort" validate:"omitempty,oneof=created_at updated_at tittle priority due_date"`
+	Sort         *string    `query:"sort" validate:"omitempty,oneof=created_at updated_at title priority due_date status"`
 	Order        *string    `query:"order" validate:"omitempty,oneof=asc desc"`
 	Search       *string    `query:"search" validate:"omitempty,min=1"`
 	Status       *Status    `query:"status" validate:"omitempty,oneof=draft active completed archived"`
@@ -65,8 +68,7 @@ func (q *GetTodosQuery) Validate() error {
 		return err
 	}
 
-	//set default values for pagination see once fetching either these nill before we passing to repository layer we are assing defult values
-	// this is the pagination for first 20 values
+	// Set defaults for pagination
 	if q.Page == nil {
 		defaultPage := 1
 		q.Page = &defaultPage
@@ -87,7 +89,8 @@ func (q *GetTodosQuery) Validate() error {
 	return nil
 }
 
-// payload for fetching a single todo item by its ID
+// ------------------------------------------------------------
+
 type GetTodoByIDPayload struct {
 	ID uuid.UUID `param:"id" validate:"required,uuid"`
 }
@@ -97,7 +100,8 @@ func (p *GetTodoByIDPayload) Validate() error {
 	return validate.Struct(p)
 }
 
-// payload for deleting a single todo item by its ID
+// ------------------------------------------------------------
+
 type DeleteTodoPayload struct {
 	ID uuid.UUID `param:"id" validate:"required,uuid"`
 }
@@ -107,12 +111,11 @@ func (p *DeleteTodoPayload) Validate() error {
 	return validate.Struct(p)
 }
 
-// payload for fetching todo statistics
-type GetTodoStatsPayload struct {
-}
+// ------------------------------------------------------------
+
+type GetTodoStatsPayload struct{}
 
 func (p *GetTodoStatsPayload) Validate() error {
-	// no validation needed as there are no fields
 	return nil
 }
 

@@ -3,8 +3,8 @@ package job
 import (
 	"encoding/json"
 	"time"
-	"uuid"
 
+	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 	"github.com/sriniously/go-tasker/internal/model/todo"
 )

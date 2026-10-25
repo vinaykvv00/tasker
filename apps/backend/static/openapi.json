@@ -490,6 +490,56 @@
                                 "updatedAt"
                               ]
                             }
+                          },
+                          "attachments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "todoId": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "uploadedBy": {
+                                  "type": "string"
+                                },
+                                "downloadKey": {
+                                  "type": "string"
+                                },
+                                "fileSize": {
+                                  "type": "number",
+                                  "nullable": true
+                                },
+                                "mimeType": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                },
+                                "updatedAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "todoId",
+                                "name",
+                                "uploadedBy",
+                                "downloadKey",
+                                "fileSize",
+                                "mimeType",
+                                "createdAt",
+                                "updatedAt"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -509,7 +559,8 @@
                           "updatedAt",
                           "category",
                           "children",
-                          "comments"
+                          "comments",
+                          "attachments"
                         ]
                       }
                     },
@@ -1014,6 +1065,56 @@
                           "updatedAt"
                         ]
                       }
+                    },
+                    "attachments": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "todoId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "uploadedBy": {
+                            "type": "string"
+                          },
+                          "downloadKey": {
+                            "type": "string"
+                          },
+                          "fileSize": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "mimeType": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "todoId",
+                          "name",
+                          "uploadedBy",
+                          "downloadKey",
+                          "fileSize",
+                          "mimeType",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -1033,7 +1134,8 @@
                     "updatedAt",
                     "category",
                     "children",
-                    "comments"
+                    "comments",
+                    "attachments"
                   ]
                 }
               }
@@ -2225,8 +2327,8 @@
   },
   "info": {
     "version": "1.0.0",
-    "title": "tasker REST API - Documentation",
-    "description": "tasker REST API - Documentation"
+    "title": "Boilerplate REST API - Documentation",
+    "description": "Boilerplate REST API - Documentation"
   },
   "servers": [
     {

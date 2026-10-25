@@ -11,10 +11,8 @@ import (
 	"github.com/sriniously/go-tasker/internal/lib/email"
 )
 
-var emailClient *email.Client
-
 func (j *JobService) InitHandlers(config *config.Config, logger *zerolog.Logger) {
-	emailClient = email.NewClient(config, logger)
+	j.emailClient = email.NewClient(config, logger)
 }
 
 func (j *JobService) handleWelcomeEmailTask(ctx context.Context, t *asynq.Task) error {
@@ -28,7 +26,7 @@ func (j *JobService) handleWelcomeEmailTask(ctx context.Context, t *asynq.Task) 
 		Str("to", p.To).
 		Msg("Processing welcome email task")
 
-	err := emailClient.SendWelcomeEmail(
+	err := j.emailClient.SendWelcomeEmail(
 		p.To,
 		p.FirstName,
 	)

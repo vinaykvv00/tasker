@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/sriniously/go-tasker/internal/model"
 	"github.com/sriniously/go-tasker/internal/model/category"
 	"github.com/sriniously/go-tasker/internal/model/comment"
@@ -46,7 +45,7 @@ type Metadata struct {
 	Tags       []string `json:"tags"`
 	Reminder   *string  `json:"reminder"`
 	Color      *string  `json:"color"`
-	Difficulty *string  `json:"difficulty"`
+	Difficulty *int     `json:"difficulty"`
 }
 
 type PopulatedTodo struct {
@@ -58,12 +57,12 @@ type PopulatedTodo struct {
 }
 
 type TodoStats struct {
-	Total     int `json:"total" db:"total"`
-	Draft     int `json:"draft" db:"draft"`
-	Active    int `json:"active" db:"active"`
-	Completed int `json:"completed" db:"completed"`
-	Archived  int `json:"archived" db:"archived"`
-	Overdue   int `json:"overdue" db:"overdue"`
+	Total     int `json:"total"`
+	Draft     int `json:"draft"`
+	Active    int `json:"active"`
+	Completed int `json:"completed"`
+	Archived  int `json:"archived"`
+	Overdue   int `json:"overdue"`
 }
 
 type UserWeeklyStats struct {

@@ -55,9 +55,8 @@ func NewRouter(s *server.Server, h *handler.Handlers, services *service.Services
 	registerSystemRoutes(router, h)
 
 	// register versioned routes
-	// "github.com/sriniously/go-tasker/internal/router/v1"
-
 	v1Router := router.Group("/api/v1")
+
 	v1.RegisterV1Routes(v1Router, h, middlewares)
 
 	return router

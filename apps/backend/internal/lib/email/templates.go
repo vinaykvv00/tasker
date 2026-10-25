@@ -4,7 +4,7 @@ type Template string
 
 const (
 	TemplateWelcome             Template = "welcome"
-	TemplateDueDateReminder     Template = "due_date_reminder"
-	TemplateOverdueNotification Template = "overdue_notification"
-	TemplateWeeklyReport        Template = "weekly_report"
+	TemplateDueDateReminder     Template = "due-date-reminder"
+	TemplateOverdueNotification Template = "overdue-notification"
+	TemplateWeeklyReport        Template = "weekly-report"
 )

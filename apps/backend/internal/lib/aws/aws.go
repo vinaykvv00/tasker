@@ -45,6 +45,6 @@ func NewAWS(server *server.Server) (*AWS, error) {
 	}
 
 	return &AWS{
-		S3: NewS3Client(server, cfg, awsConfig.EndpointURL != ""),
+		S3: NewS3Client(server, cfg),
 	}, nil
 }

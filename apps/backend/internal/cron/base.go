@@ -16,7 +16,7 @@ import (
 type JobContext struct {
 	Config        *config.Config
 	Server        *server.Server
-	JobClient     *asynq.Clients
+	JobClient     *asynq.Client
 	Repositories  *repository.Repositories
 	LoggerService *logger.LoggerService
 }
