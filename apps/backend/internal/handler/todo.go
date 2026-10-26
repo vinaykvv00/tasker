@@ -4,12 +4,12 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/sriniously/go-tasker/internal/errs"
-	"github.com/sriniously/go-tasker/internal/middleware"
-	"github.com/sriniously/go-tasker/internal/model"
-	"github.com/sriniously/go-tasker/internal/model/todo"
-	"github.com/sriniously/go-tasker/internal/server"
-	"github.com/sriniously/go-tasker/internal/service"
+	"github.com/vinaykvv00/go-tasker/internal/errs"
+	"github.com/vinaykvv00/go-tasker/internal/middleware"
+	"github.com/vinaykvv00/go-tasker/internal/model"
+	"github.com/vinaykvv00/go-tasker/internal/model/todo"
+	"github.com/vinaykvv00/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/service"
 )
 
 type TodoHandler struct {

@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/sriniously/go-tasker/internal/model/comment"
-	"github.com/sriniously/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/model/comment"
+	"github.com/vinaykvv00/go-tasker/internal/server"
 )
 
 type CommentRepository struct {

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sriniously/go-tasker/internal/model/todo"
+	"github.com/vinaykvv00/go-tasker/internal/model/todo"
 )
 
 func (c *Client) SendWelcomeEmail(to, firstName string) error {

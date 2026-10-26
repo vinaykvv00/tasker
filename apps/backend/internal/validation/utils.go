@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/sriniously/go-tasker/internal/errs"
+	"github.com/vinaykvv00/go-tasker/internal/errs"
 )
 
 type Validatable interface {

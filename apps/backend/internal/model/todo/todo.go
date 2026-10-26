@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sriniously/go-tasker/internal/model"
-	"github.com/sriniously/go-tasker/internal/model/category"
-	"github.com/sriniously/go-tasker/internal/model/comment"
+	"github.com/vinaykvv00/go-tasker/internal/model"
+	"github.com/vinaykvv00/go-tasker/internal/model/category"
+	"github.com/vinaykvv00/go-tasker/internal/model/comment"
 )
 
 type Status string

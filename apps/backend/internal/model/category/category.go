@@ -1,6 +1,6 @@
 package category
 
-import "github.com/sriniously/go-tasker/internal/model"
+import "github.com/vinaykvv00/go-tasker/internal/model"
 
 type Category struct {
 	model.Base

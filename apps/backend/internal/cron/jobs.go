@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sriniously/go-tasker/internal/lib/job"
-	"github.com/sriniously/go-tasker/internal/model/todo"
+	"github.com/vinaykvv00/go-tasker/internal/lib/job"
+	"github.com/vinaykvv00/go-tasker/internal/model/todo"
 )
 
 type DueDateRemindersJob struct{}

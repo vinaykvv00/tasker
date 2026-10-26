@@ -3,10 +3,10 @@ package service
 import (
 	"fmt"
 
-	"github.com/sriniously/go-tasker/internal/lib/aws"
-	"github.com/sriniously/go-tasker/internal/lib/job"
-	"github.com/sriniously/go-tasker/internal/repository"
-	"github.com/sriniously/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/lib/aws"
+	"github.com/vinaykvv00/go-tasker/internal/lib/job"
+	"github.com/vinaykvv00/go-tasker/internal/repository"
+	"github.com/vinaykvv00/go-tasker/internal/server"
 )
 
 type Services struct {

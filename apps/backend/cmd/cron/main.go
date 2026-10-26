@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/sriniously/go-tasker/internal/cron"
+	"github.com/vinaykvv00/go-tasker/internal/cron"
 )
 
 func main() {

@@ -10,7 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/sriniously/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/server"
 )
 
 type S3Client struct {

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/sriniously/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/server"
 )
 
 type RateLimitMiddleware struct {

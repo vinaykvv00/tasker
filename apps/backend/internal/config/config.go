@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/go-viper/mapstructure/v2"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/v2"
@@ -190,7 +191,18 @@ func LoadConfig() (*Config, error) {
 
 	mainConfig := &Config{}
 
-	err = k.Unmarshal("", mainConfig)
+	// comma-separated env values (e.g. CORS_ALLOWED_ORIGINS) must split into []string fields
+	err = k.UnmarshalWithConf("", mainConfig, koanf.UnmarshalConf{
+		DecoderConfig: &mapstructure.DecoderConfig{
+			Result:           mainConfig,
+			WeaklyTypedInput: true,
+			TagName:          "koanf",
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToTimeDurationHookFunc(),
+				mapstructure.StringToSliceHookFunc(","),
+			),
+		},
+	})
 	if err != nil {
 		logger.Fatal().Err(err).Msg("could not unmarshal main config")
 	}

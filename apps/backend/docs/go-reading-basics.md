@@ -8,7 +8,7 @@ A directory normally contains one Go package. All its ordinary Go files compile 
 
 - [../go.mod](../go.mod) declares the module's import path and dependency versions.
 - [../go.sum](../go.sum) contains dependency checksums, not installed executables.
-- `github.com/sriniously/go-tasker/internal/model/todo` refers to a package in this module. The module name can differ from the local folder name `tasker`.
+- `github.com/vinaykvv00/go-tasker/internal/model/todo` refers to a package in this module. The module name can differ from the local folder name `tasker`.
 - `internal` restricts which other Go packages may import this code. It is not an HTTP access-control mechanism.
 - `package main` plus `func main()` makes the executable entry point.
 - Capitalized identifiers such as `TodoRepository` are exported; lowercase fields such as `server` are package-private.

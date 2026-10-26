@@ -7,13 +7,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"github.com/sriniously/go-tasker/internal/errs"
-	"github.com/sriniously/go-tasker/internal/lib/aws"
-	"github.com/sriniously/go-tasker/internal/middleware"
-	"github.com/sriniously/go-tasker/internal/model"
-	"github.com/sriniously/go-tasker/internal/model/todo"
-	"github.com/sriniously/go-tasker/internal/repository"
-	"github.com/sriniously/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/errs"
+	"github.com/vinaykvv00/go-tasker/internal/lib/aws"
+	"github.com/vinaykvv00/go-tasker/internal/middleware"
+	"github.com/vinaykvv00/go-tasker/internal/model"
+	"github.com/vinaykvv00/go-tasker/internal/model/todo"
+	"github.com/vinaykvv00/go-tasker/internal/repository"
+	"github.com/vinaykvv00/go-tasker/internal/server"
 )
 
 type TodoService struct {

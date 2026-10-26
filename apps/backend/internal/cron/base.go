@@ -6,11 +6,11 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
-	"github.com/sriniously/go-tasker/internal/config"
-	"github.com/sriniously/go-tasker/internal/database"
-	"github.com/sriniously/go-tasker/internal/logger"
-	"github.com/sriniously/go-tasker/internal/repository"
-	"github.com/sriniously/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/config"
+	"github.com/vinaykvv00/go-tasker/internal/database"
+	"github.com/vinaykvv00/go-tasker/internal/logger"
+	"github.com/vinaykvv00/go-tasker/internal/repository"
+	"github.com/vinaykvv00/go-tasker/internal/server"
 )
 
 type JobContext struct {

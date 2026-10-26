@@ -7,8 +7,8 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog"
-	"github.com/sriniously/go-tasker/internal/config"
-	"github.com/sriniously/go-tasker/internal/lib/email"
+	"github.com/vinaykvv00/go-tasker/internal/config"
+	"github.com/vinaykvv00/go-tasker/internal/lib/email"
 )
 
 func (j *JobService) InitHandlers(config *config.Config, logger *zerolog.Logger) {

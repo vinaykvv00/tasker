@@ -1,4 +1,4 @@
-module github.com/sriniously/go-tasker
+module github.com/vinaykvv00/go-tasker
 
 go 1.24.5
 
@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.3
 	github.com/clerk/clerk-sdk-go/v2 v2.3.1
 	github.com/go-playground/validator/v10 v10.27.0
+	github.com/go-viper/mapstructure/v2 v2.3.0
 	github.com/google/uuid v1.6.0
 	github.com/hibiken/asynq v0.25.1
 	github.com/jackc/pgx-zerolog v0.0.0-20230315001418-f978528409eb
@@ -78,7 +79,6 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

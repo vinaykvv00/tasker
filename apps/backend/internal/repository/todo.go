@@ -9,10 +9,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/sriniously/go-tasker/internal/errs"
-	"github.com/sriniously/go-tasker/internal/model"
-	"github.com/sriniously/go-tasker/internal/model/todo"
-	"github.com/sriniously/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/errs"
+	"github.com/vinaykvv00/go-tasker/internal/model"
+	"github.com/vinaykvv00/go-tasker/internal/model/todo"
+	"github.com/vinaykvv00/go-tasker/internal/server"
 )
 
 type TodoRepository struct {

@@ -2,8 +2,8 @@ package v1
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/sriniously/go-tasker/internal/handler"
-	"github.com/sriniously/go-tasker/internal/middleware"
+	"github.com/vinaykvv00/go-tasker/internal/handler"
+	"github.com/vinaykvv00/go-tasker/internal/middleware"
 )
 
 func registerTodoRoutes(r *echo.Group, h *handler.TodoHandler, ch *handler.CommentHandler, auth *middleware.AuthMiddleware) {

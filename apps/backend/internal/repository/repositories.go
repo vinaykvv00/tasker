@@ -1,6 +1,6 @@
 package repository
 
-import "github.com/sriniously/go-tasker/internal/server"
+import "github.com/vinaykvv00/go-tasker/internal/server"
 
 type Repositories struct {
 	Todo     *TodoRepository

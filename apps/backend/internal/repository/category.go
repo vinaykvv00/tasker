@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/sriniously/go-tasker/internal/model"
-	"github.com/sriniously/go-tasker/internal/model/category"
-	"github.com/sriniously/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/model"
+	"github.com/vinaykvv00/go-tasker/internal/model/category"
+	"github.com/vinaykvv00/go-tasker/internal/server"
 )
 
 type CategoryRepository struct {

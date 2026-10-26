@@ -5,11 +5,11 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
-	"github.com/sriniously/go-tasker/internal/handler"
-	"github.com/sriniously/go-tasker/internal/middleware"
-	v1 "github.com/sriniously/go-tasker/internal/router/v1"
-	"github.com/sriniously/go-tasker/internal/server"
-	"github.com/sriniously/go-tasker/internal/service"
+	"github.com/vinaykvv00/go-tasker/internal/handler"
+	"github.com/vinaykvv00/go-tasker/internal/middleware"
+	v1 "github.com/vinaykvv00/go-tasker/internal/router/v1"
+	"github.com/vinaykvv00/go-tasker/internal/server"
+	"github.com/vinaykvv00/go-tasker/internal/service"
 	"golang.org/x/time/rate"
 )
 
