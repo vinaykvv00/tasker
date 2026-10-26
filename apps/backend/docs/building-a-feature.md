@@ -1,12 +1,13 @@
 # Build One Feature From Model to HTTP
 
-Back to [README.md](README.md). This is a learning playbook for the current project, not a claim that the example endpoint has been implemented.
+Back to [README.md](README.md). First trace the implemented Category creation
+path, then use the same sequence to add a small feature yourself.
 
 ## Start With One Small Complete Operation
 
 Use **create a category** first. Its repository is smaller than a populated Todo query and teaches the same core pattern. Once the path is tested, repeat the pattern for Todo creation, then learn the extra concepts in listing, hierarchy, comments, and statistics.
 
-Planned example: `POST /api/v1/categories`, accepting:
+Implemented example: `POST /api/v1/categories`, accepting:
 
 ```json
 {
@@ -16,7 +17,9 @@ Planned example: `POST /api/v1/categories`, accepting:
 }
 ```
 
-Do not send `user_id`, an ID to assign, or server timestamps. Authentication provides ownership and PostgreSQL generates the stored identity/timestamps. This route does not exist yet.
+Do not send `user_id`, an ID to assign, or server timestamps. Authentication
+provides ownership and PostgreSQL generates the stored identity/timestamps.
+Use disposable data when exercising this write endpoint.
 
 ## Step 1: Describe the Data and Invariants
 
@@ -32,17 +35,24 @@ Write input-validation tests first. Verify the actual tags with realistic values
 
 Use [../internal/repository/README.md](../internal/repository/README.md) for the query mechanics. Do not test repository SQL by adding ad hoc writes to main or by inspecting only startup logs.
 
-## Step 3: Add the Missing Use Case
+## Step 3: Read the Use Case
 
-The future Category service coordinates the operation and consistent error behavior. A simple create may delegate after input/identity checks; more involved operations need additional decisions. It should not build HTTP headers or duplicate SQL.
+The [Category service](../internal/service/category.go) delegates creation to
+the repository and logs a business event. More involved operations need extra
+decisions. Services should not build HTTP headers or duplicate SQL.
 
 For Todo creation, this same step must verify related parent/category ownership. For comments, it must verify access to the referenced Todo. Pass the authenticated identity explicitly. Think about race conditions and database constraints as well as read-before-write checks.
 
-The service registry currently exposes only Auth and Job. A new service must be constructed and stored there before handlers can use it. See [../internal/service/README.md](../internal/service/README.md).
+The registry constructs Category, Todo and Comment alongside Auth and Job. A
+new feature must be constructed and stored there before handlers can use it.
+See [../internal/service/README.md](../internal/service/README.md).
 
 ## Step 4: Add the HTTP Boundary
 
-A future handler needs to allocate a **fresh DTO per request**, bind input, run validation, retrieve authenticated identity, and call the service using the request's Go context. It returns a created response on success and lets the shared error handler format failures.
+The [Category handler](../internal/handler/category.go) allocates a **fresh DTO
+per request**, binds input, validates it, retrieves authenticated identity and
+calls the service. It returns 201 on creation and lets the global error handler
+format failures. Preserve this pattern in new handlers.
 
 The existing generic helpers centralize much of this, but review their captured-request-pointer behavior and the validation helper's error handling before using them. Avoid sharing a mutable DTO allocated once during route registration.
 
@@ -51,11 +61,11 @@ The existing generic helpers centralize much of this, but review their captured-
 ```mermaid
 flowchart LR
     Model[Model and DTO] --> Repo[Existing Category repository]
-    Repo --> Service[Implement Category service]
-    Service --> Services[Add to Services constructor]
-    Services --> Handler[Implement Category handler]
-    Handler --> Handlers[Add to Handlers constructor]
-    Handlers --> Route[Register authenticated route]
+    Repo --> Service[Category service]
+    Service --> Services[Services constructor]
+    Services --> Handler[Category handler]
+    Handler --> Handlers[Handlers constructor]
+    Handlers --> Route[Authenticated route]
     Route --> Test[Exercise HTTP behavior]
 ```
 
@@ -75,7 +85,10 @@ Add the route under an explicitly authenticated group. Merely having `RequireAut
 | Detail/update/delete for another owner | No access and no unintended disclosure |
 | Concurrent requests | No shared DTO state or data race |
 
-Only after the Go path works should you add/update the frontend contract and UI call. Check method, URL prefix, authorization header, and response fields in the Network tab. A shared TypeScript type cannot register an Echo route.
+Agree the contract before implementing a new feature, then check both sides as
+you build. Category's contract and UI already exist. Check method, URL prefix,
+authorization header and response fields in the Network tab. A shared
+TypeScript type cannot register an Echo route.
 
 ## Then Extend to the More Complex Todo Cases
 
@@ -85,7 +98,9 @@ Only after the Go path works should you add/update the frontend contract and UI 
 - A partial update needs a deliberate distinction between omitted fields and explicitly clearing nullable fields.
 - Multiple atomic database writes need the same transaction; calls on the ordinary pool are outside it.
 
-The current [../internal/repository/README.md](../internal/repository/README.md) records observed SQL and ownership-filter issues. Address those before using Todo lists as a reference implementation. This documentation change intentionally leaves application fixes to feature work.
+The [repository guide](../internal/repository/README.md) records remaining
+aggregation and update limitations. Do not treat tutorial code as a finished
+design. This documentation leaves application fixes to feature work.
 
 ## Stop and Explain These Before Moving On
 

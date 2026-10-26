@@ -1,6 +1,8 @@
 # Tasker Go Backend
 
-A Go/Echo backend built from a boilerplate and extended with Todo, Category, and Comment models and repositories. Feature services and HTTP routes are still being built. Existing helpers are not a production-readiness guarantee.
+A Go/Echo backend with Todo, Category and Comment features, attachments,
+statistics, queued email and cron commands. Existing infrastructure is not a
+production-readiness guarantee; testing and deployment remain later work.
 
 ## Start Learning Here
 
@@ -12,7 +14,8 @@ A Go/Echo backend built from a boilerplate and extended with Todo, Category, and
 | [internal/server/README.md](internal/server/README.md) | Startup, shared resources, and shutdown |
 | [internal/model/README.md](internal/model/README.md) | Models, DTOs, tags, pointers, and defaults |
 | [internal/repository/README.md](internal/repository/README.md) | SQL, pgx, mapping, filtering, and CRUD |
-| [internal/service/README.md](internal/service/README.md) | Current wiring and planned business rules |
+| [internal/service/README.md](internal/service/README.md) | Current wiring, ownership and side-effect coordination |
+| [internal/cron/README.md](internal/cron/README.md) | Periodic commands and queued email execution |
 | [docs/building-a-feature.md](docs/building-a-feature.md) | Connect an operation to authenticated HTTP |
 | [docs/local-development.md](docs/local-development.md) | Run, inspect, and troubleshoot safely |
 
@@ -20,7 +23,9 @@ Each major internal folder has a README mapping its source files. Shared pattern
 
 ## Architecture Overview
 
-The intended request flow is router/middleware -> handler -> service -> repository -> pgxpool -> PostgreSQL. Models are values passed between these layers, not another running service.
+The request flow is router/middleware -> handler -> service -> repository ->
+pgxpool -> PostgreSQL. Models are values passed between these layers, not another
+running service.
 
 ```
 backend/
@@ -44,9 +49,14 @@ backend/
 
 The executable is [cmd/tasker/main.go](cmd/tasker/main.go). It constructs config, logging, a PostgreSQL pool, a Redis client, an Asynq worker, registries, and Echo. The worker currently runs inside the Go process; PostgreSQL and Redis run externally.
 
-The service registry exposes Auth and Job. The HTTP registry exposes Health and OpenAPI. Todo, Category, and Comment repositories are constructed, but are not connected through feature services and routes. Clerk middleware exists but is not attached to feature routes yet.
+The registries connect Auth, Job, Todo, Category and Comment behavior. Clerk
+middleware protects feature groups under `/api/v1`. The cron executable is
+separate and runs one named job at a time; it is not automatically scheduled.
 
-The current HTTP surface is `GET /status`, `GET /docs`, and `/static/*`. There is no backend root page or registered Todo API. Inspect individual health checks: Redis failure currently does not change the overall healthy/200 response.
+System routes are `GET /status`, `GET /docs`, and `/static/*`; feature routes
+include todos, statistics, categories, comments and attachments. See the
+[route table](internal/router/README.md). There is no backend root HTML page.
+Redis failure currently does not change the overall healthy/200 health response.
 
 ## Getting Started
 
@@ -54,7 +64,9 @@ Follow [docs/local-development.md](docs/local-development.md), including its sec
 
 Use Go 1.24.5 or newer, Task, Docker/Compose, and the Tern CLI for manual migrations. Run backend commands from this directory. Keep credentials in an ignored local environment file; [.env.sample](.env.sample) is a template, not a guarantee of working values.
 
-Configuration keys use the `tasker_` prefix and dots, such as `tasker_DATABASE.HOST`. Main skips automatic migrations in local mode. The Taskfile migration command needs its own DSN.
+Configuration uses uppercase `TASKER_` and dots, such as `TASKER_DATABASE.HOST`.
+Main skips automatic migrations in local mode. The Taskfile migration command
+needs its own DSN; it is separate from Go configuration loading.
 
 ## Development
 
@@ -65,7 +77,7 @@ Configuration keys use the `tasker_` prefix and dots, such as `tasker_DATABASE.H
 | `task --list-all` | List actual tasks |
 | `task run` | Run `go run ./cmd/tasker` |
 | `task migrations:new name=example` | Create a migration file, without applying it |
-| `task migrations:up tasker_DB_DSN="..."` | Apply reviewed migrations to the selected database after confirmation |
+| `task migrations:up TASKER_DB_DSN="..."` | Apply reviewed migrations to the selected database after confirmation |
 | `go test ./...` | Run available Go tests; tests using containers require Docker |
 | `task tidy` | Format Go, tidy dependencies, and verify modules; changes files |
 
@@ -73,7 +85,10 @@ There is no current `task test` or `migrations:down` task.
 
 ## Before Extending or Deploying
 
-Read the current limitations beside each folder's explanation, particularly DTO validation, user-scoped search SQL, populated Todo joins, handler request allocation, and unused pool settings. Add tests for those behaviors rather than relying on startup logs.
+Read the current limitations beside each layer's explanation: populated joins,
+nullable updates, external object cleanup, validation error handling, queue
+deduplication and unused pool settings. Add tests rather than relying on startup
+logs. The current app has test helpers but no backend `_test.go` files.
 
 For general database concepts, see [../../docs/database/README.md](../../docs/database/README.md). For safe test isolation, see [internal/testing/README.md](internal/testing/README.md). Logging and telemetry are explained in [internal/logger/README.md](internal/logger/README.md).
 

@@ -218,11 +218,12 @@ Expected: `accepting connections` and `PONG`.
 
 ### Applying migrations
 
-`main.go` only auto-migrates when `Primary.Env != "local"`. Your `.env` sets `tasker_PRIMARY.ENV="local"`, so **migrations are manual**:
+`main.go` only auto-migrates when `Primary.Env != "local"`. With
+`TASKER_PRIMARY.ENV="local"`, **migrations are manual**:
 
 ```bash
 cd apps/backend
-task migrations:up tasker_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
+task migrations:up TASKER_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
 ```
 
 Check the applied version:
@@ -330,7 +331,9 @@ When a job is enqueued you will see keys such as:
 | `asynq:{default}:retry` | Tasks scheduled for retry |
 | `asynq:{default}:scheduled` | Delayed tasks |
 
-An empty `DBSIZE` simply means no email has been queued since the container started. That is normal.
+An empty `DBSIZE` means the selected Redis database has no keys now. It does not
+prove no task was previously enqueued; keys may have expired, been removed or
+been stored in another database.
 
 ### Option B: A GUI client
 
@@ -379,7 +382,7 @@ docker exec tasker-redis redis-cli --scan
 
 # --- Migrations ---
 cd apps/backend
-task migrations:up tasker_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
+task migrations:up TASKER_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
 
 # --- Run the API ---
 task run
@@ -389,11 +392,11 @@ task run
 
 ## 6.10 Gotchas and Caveats
 
-1. **`.env.sample` has a Redis address bug.** It contains `tasker_REDIS.ADDRESS="redis://localhost:6379"`, but both `go-redis` and `asynq` expect a bare `host:port`. The working `.env` correctly uses `localhost:6379`. Copying the sample verbatim produces `too many colons in address`.
+1. **Review the sample Redis address.** The sample uses `TASKER_REDIS.ADDRESS="redis://localhost:6379"`, but current go-redis/Asynq consumers expect bare `localhost:6379`. Remove the scheme in your local configuration.
 
-2. **`.env` holds real-looking secrets.** It contains a Resend API key and a New Relic license key. It is correctly gitignored (not tracked by git), but treat it as live credentials and rotate anything that has been shared.
+2. **Keep secrets private.** Local environment files are for credentials, not documentation examples. Check ignore/tracking status without printing values. Rotate anything exposed in chat, logs or source control; being ignored does not undo earlier exposure.
 
-3. **No authentication on either service.** Postgres uses `POSTGRES_HOST_AUTH_METHOD=trust` (no password) and Redis has no password. Ports are published on `0.0.0.0`, not just loopback. This is acceptable for a local learning setup and unsafe on a shared or untrusted network.
+3. **No authentication on either data service.** Compose uses PostgreSQL `trust` and passwordless Redis with ports published on all interfaces. Restrict bindings and configure authentication before use on a shared/untrusted network. This is not a hardened local setup.
 
 4. **Pool settings in `.env` are ignored.** `MAX_OPEN_CONNS`, `MAX_IDLE_CONNS`, `CONN_MAX_LIFETIME`, and `CONN_MAX_IDLE_TIME` are parsed into config but never assigned to `pgxpool.Config`, so pgx defaults apply.
 

@@ -11,7 +11,7 @@ The code uses SQL and pgx directly, not an ORM. These are practical layers, not 
 | [repositories.go](repositories.go) | The registry constructs `Todo`, `Category`, and `Comment` repositories |
 | [category.go](category.go) | The simplest full CRUD and paginated-list example |
 | [comment.go](comment.go) | Operations on comments linked to a Todo |
-| [todo.go](todo.go) | Todo CRUD, populated reads, filters, pagination, and statistics |
+| [todo.go](todo.go) | Todo CRUD, populated reads, filters, pagination, statistics, attachments and cron queries |
 
 `NewCategoryRepository(server)` stores the shared server pointer. `r.server.DB.Pool` then reaches the same pgx pool used by the other repositories. Creating a repository does not open a separate database or register a route.
 
@@ -28,7 +28,7 @@ The code uses SQL and pgx directly, not an ORM. These are practical layers, not 
 
 ```mermaid
 sequenceDiagram
-    participant Caller as Future service / current test
+    participant Caller as Feature service
     participant Repo as CategoryRepository
     participant Pool as pgxpool
     participant DB as PostgreSQL
@@ -78,7 +78,7 @@ Count and list must use the same filters. They are separate statements and can o
 
 | Operation | New concept, beyond ordinary CRUD |
 | --- | --- |
-| `GetTodoById` / `GetTodos` | Joins plus JSON aggregation to return category, children, and comments |
+| `GetTodoByID` / `GetTodos` | Joins plus JSON aggregation to return category, children, comments and attachments |
 | `CheckTodoExists` | Returns a full unpopulated Todo, not a boolean; useful for checking ownership before related work |
 | Root Todo listing | Adds `parent_todo_id IS NULL` unless a parent filter is supplied |
 | Todo update | Sets `completed_at` when completing; clears it when changing to a non-completed status |
@@ -92,14 +92,17 @@ For populated reads, `LEFT JOIN` retains a Todo without a related row, `FILTER` 
 
 These are source-code observations, not results of running the endpoints. Documentation work does not fix them:
 
-- The populated queries have extra closing parentheses around aggregate `FILTER` expressions. They need SQL execution tests.
-- `GetTodos` joins `todos_comments` rather than the migrated `todo_comments` table and orders comments by a nonexistent `sort_order` column.
-- Joining children and comments together multiplies rows: two children and three comments produce six joined rows. Aggregating without separate subqueries can duplicate both arrays.
-- The search expression lacks parentheses around `title ILIKE ... OR description ILIKE ...`. Since `AND` binds more tightly than `OR`, a matching description can bypass the user and other filters in the count query and, after SQL repairs, the list query. This is an ownership-isolation defect, not just a search issue.
-- The no-sort fallback lacks a separating space before `ORDER BY`.
+- Current SQL uses `todo_comments`, parenthesized search and a spaced `ORDER BY`. Earlier spelling/syntax observations are obsolete.
+- Joining children, comments and attachments multiplies rows: two children, three comments and two attachments produce twelve joined rows. Current aggregates do not deduplicate arrays or aggregate each relationship separately.
+- PATCH assigns only non-nil pointers. For nullable scalar fields, JSON null and an omitted field both decode to nil, so clearing a description/category/due date is not represented distinctly.
+- Textual priority sorting is lexical, not an explicit high/medium/low business ranking.
+- Statistics count all owned todos, including subtasks; the default list returns roots. Their totals can legitimately differ.
 - Empty-list branches expecting `CollectRows` to return `ErrNoRows` will not be used for ordinary empty results.
 
-Create/update links to parent Todos and categories, and comment insertion, need same-user checks. Database foreign keys only enforce existence here. The schema blocks a Todo being its own parent, not longer cycles such as A -> B -> A.
+Services now perform same-user checks for parent/category links and comment
+insertion. Other repository callers must preserve those checks. Foreign keys
+enforce existence, not ownership; the schema blocks self-parenting, not every
+possible hierarchy problem.
 
 ## How to Learn and Verify This Layer
 

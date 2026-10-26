@@ -1,8 +1,11 @@
 # Learning the Tasker Backend
 
-This guide starts with the cloned boilerplate, then follows the Tasker feature you are building. It explains the current code, not an imagined finished application. Start here before reading individual files.
+This guide follows the Tasker application from startup to authenticated feature
+requests, database queries, attachments and background work. Start here before
+reading individual files.
 
-The implementation snapshot is 2026-10-11. Code links are the reference if the project changes later. This documentation task does not change the application or certify it as production-ready.
+Updated against source on 2026-10-25. Code links are the reference if the project
+changes later. Documentation does not certify runtime behavior or production readiness.
 
 ## Recommended Reading Order
 
@@ -13,8 +16,8 @@ The implementation snapshot is 2026-10-11. Code links are the reference if the p
 | 3 | [../internal/server/README.md](../internal/server/README.md) | What happens when `task run` starts the backend? |
 | 4 | [../internal/model/README.md](../internal/model/README.md) | How are database rows, Go models, and request DTOs different? |
 | 5 | [../internal/repository/README.md](../internal/repository/README.md) | How does one CRUD method work, and what changes for lists/joins? |
-| 6 | [../internal/service/README.md](../internal/service/README.md) | What should the missing feature service decide? |
-| 7 | [../internal/handler/README.md](../internal/handler/README.md) and [../internal/router/README.md](../internal/router/README.md) | How will the operation become an HTTP endpoint? |
+| 6 | [../internal/service/README.md](../internal/service/README.md) | What does a feature service decide? |
+| 7 | [../internal/handler/README.md](../internal/handler/README.md) and [../internal/router/README.md](../internal/router/README.md) | How does the operation become an HTTP endpoint? |
 | 8 | [building-a-feature.md](building-a-feature.md) | In what order should I implement and verify one complete feature? |
 | 9 | [local-development.md](local-development.md) | How do I run, inspect, and troubleshoot it safely? |
 
@@ -36,7 +39,8 @@ flowchart LR
     Jobs --> Redis[(Redis)]
 ```
 
-This is the intended feature flow. A diagram does not mean every feature has been implemented through every layer.
+The synchronous route through these layers is implemented. Background work has
+a separate entry path; not every service operation enqueues a job.
 
 ## 2. Start With What Already Runs
 
@@ -54,18 +58,22 @@ Read [../cmd/tasker/main.go](../cmd/tasker/main.go) from top to bottom:
 
 ## 3. Current Feature Boundary
 
-In [../internal/service/services.go](../internal/service/services.go), `Services` currently contains `Auth` and `Job`. Its constructor accepts `repos`, but does not yet construct a Todo, Category, or Comment service. A repository method existing on disk is therefore not proof that a browser can call it.
+In [../internal/service/services.go](../internal/service/services.go), startup
+constructs Auth, Todo, Category and Comment services and exposes Job. Follow
+that registry into `NewHandlers` and the versioned router to see the complete wiring.
 
 | Part | Current state |
 | --- | --- |
 | Boilerplate startup | Config, logging, DB pool, Redis client, worker, and HTTP server are constructed |
-| Database schema | SQL files define categories, Todos, comments, helper functions, and indexes; applied state must be checked separately |
+| Database schema | Three migrations define helpers, categories, todos, comments, attachments and indexes; applied state is separate |
 | Models/DTOs | Feature types exist; validation caveats are documented in the model guide |
 | Repositories | Todo, Category, and Comment methods exist and are registered; Todo query caveats remain |
-| Feature services | Not yet constructed or implemented in the current service folder |
-| Feature handlers/routes | Not registered; only health, docs, and static routes exist |
-| Authentication | Clerk middleware exists, but is not attached to feature routes yet |
-| Frontend | Currently a Hello World screen; no complete Tasker UI flow |
+| Feature services | Todo, Category and Comment coordinate operations and ownership checks |
+| Feature handlers/routes | CRUD, statistics, comments and attachments registered under `/api/v1` |
+| Authentication | Clerk middleware protects the feature route groups |
+| Background work | Asynq worker starts with the server; scheduling uses a separate cron executable |
+| Frontend | React pages, forms, typed API hooks, auth and theme providers are present |
+| Tests/deployment | Test helpers exist; comprehensive feature coverage and deployment remain later work |
 
 When learning a feature, ask these questions in order:
 
@@ -95,7 +103,7 @@ Models are data types passed between layers, not a network hop after the reposit
 | [../internal/database/README.md](../internal/database/README.md) | Pool/tracer construction and migration execution |
 | [../internal/model/README.md](../internal/model/README.md) | Shared fields, feature types, DTOs, optional inputs |
 | [../internal/repository/README.md](../internal/repository/README.md) | Parameterized SQL, mapping, filters, ownership predicates |
-| [../internal/service/README.md](../internal/service/README.md) | Current service wiring and planned use-case decisions |
+| [../internal/service/README.md](../internal/service/README.md) | Current service wiring and use-case decisions |
 | [../internal/handler/README.md](../internal/handler/README.md) | HTTP binding, responses, generic handler helpers |
 | [../internal/router/README.md](../internal/router/README.md) | Actual routes and middleware registration |
 | [../internal/middleware/README.md](../internal/middleware/README.md) | Authentication hooks, context, logging, request wrappers |
@@ -104,6 +112,7 @@ Models are data types passed between layers, not a network hop after the reposit
 | [../internal/sqlerr/README.md](../internal/sqlerr/README.md) | PostgreSQL error-code translation |
 | [../internal/logger/README.md](../internal/logger/README.md) | Zerolog and optional New Relic integration |
 | [../internal/lib/README.md](../internal/lib/README.md) | Job/email helpers and their individual file roles |
+| [../internal/cron/README.md](../internal/cron/README.md) | Periodic command execution, batching and queued email work |
 | [../internal/testing/README.md](../internal/testing/README.md) | Disposable DB setup, test server, assertions, transaction helpers |
 
 Each guide maps its source files. Closely related tiny files share one explanation rather than receiving repeated CRUD/constructor descriptions. General SQL lessons live in [../../../docs/database/README.md](../../../docs/database/README.md).
@@ -113,6 +122,7 @@ Each guide maps its source files. Closely related tiny files share one explanati
 | File/location | Meaning |
 | --- | --- |
 | [../cmd/tasker/main.go](../cmd/tasker/main.go) | Executable entry point; manually wires the application |
+| [../cmd/cron/main.go](../cmd/cron/main.go) | Separate periodic-job executable |
 | [../go.mod](../go.mod) and [../go.sum](../go.sum) | Go module dependencies and checksums |
 | [../Taskfile.yml](../Taskfile.yml) | Developer command aliases, not the background-task queue |
 | [../.env.sample](../.env.sample) | Configuration template; local secrets belong in an ignored environment file |
@@ -125,9 +135,16 @@ Each guide maps its source files. Closely related tiny files share one explanati
 
 ## 7. Frontend Context, Only What You Need Now
 
-[../../frontend/src/App.tsx](../../frontend/src/App.tsx) currently renders Hello World. The API hook in [../../frontend/src/api/index.ts](../../frontend/src/api/index.ts) obtains a Clerk token and uses Axios with shared TypeScript contracts. That hook is not currently evidence of a running Todo workflow.
+[../../frontend/src/main.tsx](../../frontend/src/main.tsx) installs providers;
+[../../frontend/src/router.tsx](../../frontend/src/router.tsx) maps URLs to
+pages. The API hook in [../../frontend/src/api/index.ts](../../frontend/src/api/index.ts)
+obtains a Clerk token and sends Axios requests using shared TypeScript contracts.
+Read the [frontend guide](../../../docs/frontend/README.md) alongside this one.
 
-Watch path composition when wiring it: the hook builds `${API_URL}/api${path}`, while the health contract path is `/status` and Go registers `/status`. With the backend origin as `API_URL`, that would request `/api/status`, not the existing route. The current [../../frontend/vite.config.ts](../../frontend/vite.config.ts) has no proxy rewrite. Confirm the final URL in the browser Network tab.
+The hook builds `${env.VITE_API_URL}/api${path}`. Feature contracts include `/v1`,
+which yields `/api/v1/...`. The health contract instead uses `/status`, producing
+`/api/status` through this adapter while Go registers `/status`. Use the system
+route directly for health checks; the current Vite config has no proxy rewrite.
 
 Contracts/types are useful but do not automatically typecheck raw Go SQL, generate Go endpoints, or enforce matching response shapes. Verify both sides of the HTTP boundary. Never put backend secrets into browser configuration.
 

@@ -106,7 +106,7 @@ Then apply migrations:
 
 ```bash
 cd apps/backend
-task migrations:up tasker_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
+task migrations:up TASKER_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
 ```
 
 Ready? Start with **[Chapter 1: Database Fundamentals](01_fundamentals.md)**.

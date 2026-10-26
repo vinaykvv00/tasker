@@ -42,7 +42,7 @@ To install the matching Tern CLI and apply reviewed migrations from the backend 
 go install github.com/jackc/tern/v2@v2.3.3
 export PATH="$(go env GOPATH)/bin:$PATH"
 tern version
-task migrations:up tasker_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
+task migrations:up TASKER_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
 task run
 ```
 
@@ -81,8 +81,37 @@ A Redis-capable client can connect to `127.0.0.1:6379`. Windows-to-WSL/Desktop f
 | `no sql in forward migration step` | Executable SQL must precede the Tern separator |
 | Relation/function not found | Target database and applied migration version |
 | 404 at `/` | No backend root page is registered; try `/status` or `/docs` |
-| 404 at a Todo URL | Feature service/handler/route may not be wired yet |
+| 404 at a Todo URL | Check method and `/api/v1` prefix against registered routes |
 | SQL or validation fails but Go builds | SQL strings and tags require runtime tests |
 | Frontend runs but requests fail | Browser Network tab: actual URL, prefix, CORS, token, method, response |
 
 Run `task --list-all` for tasks that actually exist. The current Taskfile has no `test` or `migrations:down` task; use Go test commands or deliberately reviewed Tern commands instead.
+
+## Frontend Configuration and Checks
+
+The frontend dev script loads its ignored local environment file via `env-cmd`.
+It needs `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_URL` (the backend origin, normally
+`http://localhost:8080`, without `/api`), and optionally `VITE_ENV`.
+Use the matching Clerk application on both sides. Never put a Clerk secret key,
+Resend key or storage credentials into browser variables.
+
+From the repository root, build the shared contracts before standalone frontend
+work:
+
+```bash
+bun install
+bun run build --filter=@tasker/openapi
+cd apps/frontend
+bunx tsc -b --pretty false
+bun run lint
+bun run dev
+```
+
+The frontend's plain `tsc` script has a solution config with `files: []` and
+project references. It does not check the referenced app by itself. `tsc -b`
+checks those projects. A Vite build transpiles and bundles; it is not evidence
+of a successful full TypeScript check.
+
+For the backend, `go build ./...` checks compilation and `go vet ./...` performs
+static analysis. Neither executes SQL queries or proves authentication works.
+Testing and deployment remain separate learning stages.

@@ -2,7 +2,9 @@
 
 Start at **[../../apps/backend/docs/README.md](../../apps/backend/docs/README.md)** for the ordered beginner guide, diagrams, current feature status, and complete folder/file map.
 
-The goal is to understand the cloned Go boilerplate first, then connect the Tasker models and repositories to services and HTTP handlers. The detailed docs live beside the backend code so you can read a folder's explanation while working in it.
+The goal is to understand the running Go application and trace a feature through
+its layers. Detailed docs live beside the code so you can read a folder's
+explanation while working in it.
 
 ## Read in Stages
 
@@ -23,10 +25,19 @@ For SQL, PostgreSQL, pgx, and Tern from first principles, use [../database/READM
 
 The backend starts from [../../apps/backend/cmd/tasker/main.go](../../apps/backend/cmd/tasker/main.go). It constructs shared resources and then repository, service, handler, and router registries.
 
-Todo, Category, and Comment models/repositories exist. Feature services and HTTP handlers/routes are not yet wired; Auth and Job are the current service entries, and Health/OpenAPI are the current handler entries. The frontend remains a minimal Hello World screen.
+Todo, Category and Comment models, repositories, services, handlers and routes
+are wired. Attachments, statistics, background email jobs and a separate cron
+entry point are present. React now has authentication, dashboard, todo/category
+screens and settings.
 
 The folder guides label planned flows and known code limitations. A startup log, a model definition, or a helper file existing is not proof of a working, authorized feature. Application code is intentionally unchanged by this documentation work.
 
-## What Changed From the Earlier Overview
+## Important Boundaries
 
-Local startup does not auto-run migrations; configuration uses dotted keys such as `tasker_DATABASE.HOST`; test helpers provision PostgreSQL, not Redis; and `/api/v1` is currently an empty group. The new guides use actual code behavior rather than the generic capabilities a boilerplate might eventually provide.
+Local startup does not auto-run migrations. Configuration uses case-sensitive,
+dotted names such as `TASKER_DATABASE.HOST`. Features live under `/api/v1`;
+`/status` is separate. Test helpers are infrastructure, not proof of feature
+coverage, and deployment remains a later learning stage.
+
+Use the [end-to-end guide](../overall_end_to_end/README.md) to connect backend
+code to browser behavior and TypeScript contracts.

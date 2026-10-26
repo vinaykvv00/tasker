@@ -78,12 +78,12 @@ postgres://postgres:@localhost:5432/tasker?sslmode=disable
 | Part | Meaning | Source in this project |
 | :--- | :--- | :--- |
 | `postgres://` | PostgreSQL connection-URI scheme | hardcoded |
-| `postgres` | Username | `tasker_DATABASE.USER` |
-| *(empty)* | Password | `tasker_DATABASE.PASSWORD` |
-| `localhost` | Host | `tasker_DATABASE.HOST` |
-| `5432` | Port | `tasker_DATABASE.PORT` |
-| `tasker` | Database name | `tasker_DATABASE.NAME` |
-| `sslmode=disable` | No TLS (local only) | `tasker_DATABASE.SSL_MODE` |
+| `postgres` | Username | `TASKER_DATABASE.USER` |
+| *(empty)* | Password | `TASKER_DATABASE.PASSWORD` |
+| `localhost` | Host | `TASKER_DATABASE.HOST` |
+| `5432` | Port | `TASKER_DATABASE.PORT` |
+| `tasker` | Database name | `TASKER_DATABASE.NAME` |
+| `sslmode=disable` | No TLS (local only) | `TASKER_DATABASE.SSL_MODE` |
 
 ### How this project builds the DSN
 
@@ -141,13 +141,13 @@ If all connections are busy, the request **waits** until one frees up.
 
 ### Declared pool settings vs. actual behavior
 
-From `.env`:
+Illustrative configuration values, not a readout of local credentials:
 
 ```env
-tasker_DATABASE.MAX_OPEN_CONNS="25"
-tasker_DATABASE.MAX_IDLE_CONNS="25"
-tasker_DATABASE.CONN_MAX_LIFETIME="300"
-tasker_DATABASE.CONN_MAX_IDLE_TIME="300"
+TASKER_DATABASE.MAX_OPEN_CONNS="25"
+TASKER_DATABASE.MAX_IDLE_CONNS="25"
+TASKER_DATABASE.CONN_MAX_LIFETIME="300"
+TASKER_DATABASE.CONN_MAX_IDLE_TIME="300"
 ```
 
 These values exist in configuration, but [database.go](../../apps/backend/internal/database/database.go) does not assign them to the pgx pool config. They are not the active connection limits or timeouts.

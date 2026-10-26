@@ -1,158 +1,145 @@
-# Go tasker
+# Tasker
 
-A production-ready monorepo template for building scalable web applications with Go backend and TypeScript frontend. Built with modern best practices, clean architecture, and comprehensive tooling.
+A full-stack task manager built while learning from a tutorial and extending a
+Go/TypeScript boilerplate. The Go API, React UI and shared packages are present;
+testing, unfinished UI behavior and deployment hardening remain ongoing work.
+
+## Understand the Project
+
+Start with the **[complete learning path](docs/overall_end_to_end/README.md)**.
+It explains the current source, not an idealized finished system.
+
+| Guide | What you will learn |
+| --- | --- |
+| [Architecture](docs/overall_end_to_end/architecture_and_tech_stack.md) | Processes, technologies, layers and design tradeoffs |
+| [Request walkthroughs](docs/overall_end_to_end/request_walkthroughs.md) | Browser-to-SQL flow, uploads, updates and errors |
+| [Backend](apps/backend/docs/README.md) | Go syntax, startup, each layer and background jobs |
+| [Database](docs/database/README.md) | PostgreSQL, pgx, schema, migrations and local inspection |
+| [Frontend](docs/frontend/README.md) | Routes, providers, forms, query cache and current placeholders |
+| [Shared packages](packages/README.md) | Zod, contracts, generated API docs and email templates |
+| [Learning workbook](docs/overall_end_to_end/learning_workbook.md) | Exercises, glossary and a method for building independently |
 
 ## Features
 
-- **Monorepo Structure**: Organized with Turborepo for efficient builds and development
-- **Go Backend**: High-performance REST API with Echo framework
-- **Authentication**: Integrated Clerk SDK for secure user management
-- **Database**: PostgreSQL with migrations and connection pooling
-- **Background Jobs**: Redis-based async job processing with Asynq
-- **Observability**: New Relic APM integration and structured logging
-- **Email Service**: Transactional emails with Resend and HTML templates
-- **Testing**: Comprehensive test infrastructure with Testcontainers
-- **API Documentation**: OpenAPI/Swagger specification
-- **Security**: Rate limiting, CORS, secure headers, and JWT validation
+- Todo CRUD, filtering, pagination, status, priority, categories and comments.
+- Attachment metadata in PostgreSQL and file bytes in S3-compatible storage.
+- Clerk authentication in React and authenticated Go feature routes.
+- React Query data fetching, forms, dashboard and theme switching.
+- Tern migrations, pgx pooling, Asynq email tasks and separate cron commands.
+- Structured logs and optional New Relic integration.
+- Shared TypeScript contracts, generated OpenAPI docs and React Email sources.
+
+Settings import/export/delete-all, notification preferences and bulk mutations
+are not complete. No backend test files are present yet; Testcontainers helpers
+are groundwork, not coverage. See the learning guides for known limitations.
 
 ## Project Structure
 
-```
-go-tasker/
-├── apps/backend/          # Go backend application
-├── packages/         # Frontend packages (React, Vue, etc.)
-├── package.json      # Monorepo configuration
-├── turbo.json        # Turborepo configuration
-└── README.md         # This file
+```text
+apps/backend/       Go API, cron executable, migrations and email HTML
+apps/frontend/      React single-page application
+packages/zod/       Shared TypeScript data schemas
+packages/openapi/   ts-rest contracts and OpenAPI generator
+packages/emails/    React Email template sources
+docs/               Architecture, database and learning guides
+docker-compose.yml  Local PostgreSQL and Redis
 ```
 
 ## Quick Start
 
 ### Prerequisites
 
-- Go 1.24 or higher
+- Go 1.24.5 or newer
 - Node.js 22+ and Bun
-- PostgreSQL 16+
-- Redis 8+
+- Docker/Compose, or compatible PostgreSQL and Redis services
+- Task and the Tern CLI for the documented backend workflow
+- Clerk configuration and the external integration credentials required by Go config
 
-### Installation
+Read [local setup and its security notes](apps/backend/docs/local-development.md)
+before starting services. Compose currently publishes passwordless database/Redis
+ports on all interfaces; it is not a hardened deployment configuration.
 
-1. Clone the repository:
+### Setup
+
+Clone only when you need another working copy:
+
 ```bash
-git clone https://github.com/sriniously/go-tasker.git
-cd go-tasker
+git clone https://github.com/vinaykvv00/tasker.git
+cd tasker
+bun install
 ```
 
-2. Install dependencies:
-```bash
-# Install frontend dependencies
-bun install
+Create an ignored backend environment file from
+[the sample](apps/backend/.env.sample) **only if it does not already exist**.
+Use uppercase dotted names such as `TASKER_DATABASE.HOST`; local Redis needs
+`localhost:6379`, not a `redis://` URL. Do not source dotted assignments as Bash.
 
-# Install backend dependencies
+Configure the frontend's ignored local environment with
+`VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_URL="http://localhost:8080"`, and
+`VITE_ENV="local"`. Browser values are public; never put backend secrets there.
+
+After reviewing configuration, start data services from the root:
+
+```bash
+docker compose up -d
 cd apps/backend
 go mod download
 ```
 
-3. Set up environment variables:
+Apply reviewed migrations to the intended **local** database, then start the API:
+
 ```bash
-cp apps/backend/.env.example apps/backend/.env
-# Edit apps/backend/.env with your configuration
-```
-
-4. Start the database and Redis.
-
-5. Run database migrations:
-```bash
-cd apps/backend
-task migrations:up
-```
-
-6. Start the development server:
-```bash
-# From root directory
-bun dev
-
-# Or just the backend
-cd apps/backend
+task migrations:up TASKER_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
 task run
 ```
 
-The API will be available at `http://localhost:8080`
+Migration execution changes the database after confirmation. Local API startup
+does not apply migrations automatically.
+
+In another terminal at the root:
+
+```bash
+bun run dev
+```
+
+This starts JS workspace development processes, not the Go API. The frontend is
+normally `http://localhost:3000`, API health is `http://localhost:8080/status`,
+and API documentation is `http://localhost:8080/docs`.
 
 ## Development
 
-### Available Commands
+| Directory | Command | Purpose |
+| --- | --- | --- |
+| Backend | `task --list-all` | Available tasks |
+| Backend | `task migrations:new name=example` | Create, not apply, a migration |
+| Backend | `go build ./...` / `go vet ./...` | Compile and static checks |
+| Backend | `go test ./...` | Run tests once added; no tests is not coverage |
+| Backend | `go run ./cmd/cron list` | Inspect named periodic jobs without executing them |
+| Root | `bun run build --filter=@tasker/openapi` | Build shared contracts and dependencies |
+| Root | `bun run --cwd packages/openapi gen` | Regenerate API JSON artifacts |
+| Root | `bun run --cwd packages/emails export` | Regenerate backend email HTML |
+| Frontend | `bunx tsc -b --pretty false` | Check referenced TypeScript projects |
+| Frontend | `bun run lint` / `bun run build` | Lint / bundle the UI |
 
-```bash
-# Backend commands (from backend/ directory)
-task help              # Show all available tasks
-task run               # Run the application
-task migrations:new    # Create a new migration
-task migrations:up     # Apply migrations
-task test              # Run tests
-task tidy              # Format code and manage dependencies
+The frontend's current plain `tsc` script does not check its project references.
+Use build mode for a real typecheck. Root build does not run Go, API generation
+or email export. Check scripts before assuming what a command covers.
 
-# Frontend commands (from root directory)
-bun dev                # Start development servers
-bun build              # Build all packages
-bun lint               # Lint all packages
-```
+## Before Deployment
 
-### Environment Variables
-
-The backend uses environment variables prefixed with `tasker_`. Key variables include:
-
-- `tasker_DATABASE_*` - PostgreSQL connection settings
-- `tasker_SERVER_*` - Server configuration
-- `tasker_AUTH_*` - Authentication settings
-- `tasker_REDIS_*` - Redis connection
-- `tasker_EMAIL_*` - Email service configuration
-- `tasker_OBSERVABILITY_*` - Monitoring settings
-
-See `apps/backend/.env.example` for a complete list.
-
-## Architecture
-
-This tasker follows clean architecture principles:
-
-- **Handlers**: HTTP request/response handling
-- **Services**: Business logic implementation
-- **Repositories**: Data access layer
-- **Models**: Domain entities
-- **Infrastructure**: External services (database, cache, email)
-
-## Testing
-
-```bash
-# Run backend tests
-cd apps/backend
-go test ./...
-
-# Run with coverage
-go test -cover ./...
-
-# Run integration tests (requires Docker)
-go test -tags=integration ./...
-```
-
-### Production Considerations
-
-1. Use environment-specific configuration
-2. Enable production logging levels
-3. Configure proper database connection pooling
-4. Set up monitoring and alerting
-5. Use a reverse proxy (nginx, Caddy)
-6. Enable rate limiting and security headers
-7. Configure CORS for your domains
+Finish behavior-focused tests, review ownership and upload limits, configure
+TLS and credentials, restrict network bindings, verify migrations and artifact
+packaging, establish backups/restore, and deliberately schedule cron. Queue
+retries and logging do not replace those checks. Deployment is not configured
+or validated by this documentation update.
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Use the [feature checklist](docs/overall_end_to_end/how_to_add_features.md).
+Keep changes focused, preserve existing data/migration history, and use short
+lowercase commit messages grouped by behavior. Do not commit environment secrets
+or the ignored tutorial-reference checkout.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+See [LICENSE](LICENSE) for the repository's license terms.

@@ -1,142 +1,134 @@
-# Enterprise Architecture & Tech Stack
+# Architecture and Technology Map
 
-This document describes the modern tech stack utilized in the **Go-tasker** repository, explaining **what** each component is, **why** it is used, **how** everything connects, and **what and where** their responsibilities reside.
+Back to the [learning index](README.md). This chapter separates **runtime
+processes**, **code layers**, and **build tools**. Mixing these categories makes
+a full-stack repository appear more complicated than it is.
 
----
+## 1. What Actually Runs?
 
-## 1. High-Level Architecture Flow
+| Process or service | Responsibility | Local entry |
+| --- | --- | --- |
+| Browser app | Render pages, collect input, call API | Vite serves port 3000 during development |
+| Go API | HTTP routes, rules, SQL, attachment access | `go run ./cmd/tasker` from backend |
+| Asynq worker | Process queued emails | Started inside the Go API process |
+| Cron executable | Run one periodic job and exit | `go run ./cmd/cron list` shows names |
+| PostgreSQL | Store relational records | Compose publishes 5432 |
+| Redis | Store Asynq queue data | Compose publishes 6379 |
+| Email preview | Preview TSX templates | JS workspace dev server on 3001 |
+| External integrations | Clerk, S3-compatible storage, Resend, optional New Relic | Configured clients, not Compose services |
 
-When a user interacts with the application, requests and events flow through the system as illustrated below:
+Docker runs the two local data services, not every app in this repository.
+Root `bun dev` runs JavaScript workspace scripts; it does not start the Go API.
+Cron requires an external scheduler for automatic periodic invocation.
 
 ```mermaid
-graph TD
-    User([User Browser])
-    
-    %% Frontend Subsystem
-    subgraph Frontend [apps/frontend - React & Vite]
-        UI[React UI Components]
-        Query[TanStack React Query]
-        Client[Axios & ts-rest Client]
-    end
-
-    %% Auth & CDN
-    Clerk[Clerk Auth IAM SDK]
-    
-    %% Backend Subsystem
-    subgraph Backend [apps/backend - Go Echo Server]
-        Echo[Echo Web Router]
-        AuthMW[Clerk JWKS Auth Middleware]
-        Handlers[Handlers Layer]
-        Services[Services Layer]
-        Repos[Repositories Layer]
-        JobService[Asynq Job Service]
-    end
-    
-    %% Infrastructure
-    subgraph Infrastructure [Data & Services]
-        DB[(PostgreSQL DB)]
-        Redis[(Redis Cache & Queue)]
-        Resend[Resend Email Gateway]
-        NewRelic[New Relic APM Agent]
-    end
-
-    %% Connections
-    User --> UI
-    UI --> Query
-    Query --> Client
-    Client --> Clerk -- Exchanges Session Token --> Client
-    Client -->|Type-Safe HTTP Contract| Echo
-    
-    Echo --> AuthMW
-    AuthMW --> Handlers
-    Handlers --> Services
-    Services --> Repos
-    Services -->|Enqueue Job| JobService
-    
-    Repos -->|pgxpool Connection Pool| DB
-    JobService -->|Redis Broker| Redis
-    Redis -.->|Asynq Worker Consumes| JobService
-    JobService -->|Send SMTP/REST| Resend
-    
-    %% Monitoring Streams
-    Echo -.->|Push Traces/Logs| NewRelic
-    Repos -.->|SQL Trace| NewRelic
-    Redis -.->|Redis Trace| NewRelic
+flowchart TD
+  subgraph Browser[Browser runtime]
+    Page[React pages and forms] --> Query[React Query]
+    Query --> Client[ts-rest client and Axios]
+  end
+  Client -->|HTTP plus token| Router[Echo router and middleware]
+  subgraph Go[Go API process]
+    Router --> Handler[Handlers]
+    Handler --> Service[Services]
+    Service --> Repo[Repositories]
+    Worker[Asynq worker] --> Mail[Email client]
+  end
+  Repo -->|pgx protocol| Postgres[(PostgreSQL)]
+  Service --> Storage[(S3-compatible file storage)]
+  Cron[Separate cron command] --> Postgres
+  Cron --> Queue[(Redis)]
+  Queue --> Worker
+  Mail --> Resend[Resend HTTP API]
+  Clerk[Clerk] --> Browser
+  Clerk --> Go
+  Go -. optional telemetry .-> APM[New Relic]
 ```
 
----
+## 2. Why These Technologies?
 
-## 2. Exhaustive Tech Stack Breakdown
+| Technology | Job here | Why useful | What it does not guarantee |
+| --- | --- | --- | --- |
+| Go / Echo | Compiled API with HTTP routing and middleware | Explicit functions, types and concurrency | Correct SQL or complete authorization |
+| React / Router | Component UI and URL-to-page mapping | Reusable UI and predictable navigation | Server security |
+| Vite | Development server and browser bundle | Fast feedback and module bundling | Full TypeScript checking |
+| Tailwind / Radix / Lucide | Styling, UI behavior and icons | Consistent reusable controls | Every screen is accessible or complete without verification |
+| React Hook Form / Zod resolver | Form state and field validation | Centralized errors and submission | Backend acceptance of every locally valid value |
+| TanStack Query | Server-data cache, fetch/mutation lifecycle | Shared fetching and invalidation | Push updates or persisted server data by itself |
+| ts-rest / Zod | Typed contract definitions and schemas | Reuse shapes across TS callers | Automatic Go code generation or runtime response agreement |
+| PostgreSQL / pgxpool | Relational storage and reusable connections | Constraints, SQL, transactions, pooling | Cross-system atomicity with S3 or Redis |
+| Tern | Ordered schema changes | Repeatable migration history | Down migrations that were never written |
+| Clerk | Identity and session integration | Avoid custom password/session machinery | Resource ownership policy for this application |
+| Redis / Asynq | Queued background work | Retryable work outside browser requests | Exactly-once side effects or automatic schedules |
+| AWS SDK / S3 | Binary object storage | Separate large files from relational metadata | Cleanup coordinated with SQL automatically |
+| React Email / Go templates / Resend | Author, render and deliver HTML emails | Reusable templates and HTTP delivery | Correct recipient-facing links or inbox delivery |
+| Zerolog / New Relic | Structured logs and optional tracing | Correlate requests, errors and timings | Correctness, privacy or availability by configuration alone |
+| Testcontainers | Disposable PostgreSQL helper infrastructure | Test real SQL in isolation | Tests exist or cover all behavior |
 
-### Go & Echo Framework
-* **What**: Go (v1.24+) is a statically typed, compiled programming language with excellent concurrency primitives (goroutines and channels). Echo is a minimalist, ultra-fast HTTP router and web framework.
-* **Why**: Go provides high performance, minimal memory footprints, and instant cold-starts, making it perfect for cloud-native APIs. Echo compiles in milliseconds, offers robust routing, built-in middewares, and high-convenience error boundary capabilities.
-* **Its Job**: Listens for HTTP traffic, parses routes, processes global request/response middleware, and dispatches requests to standard endpoint controllers.
+This project uses PostgreSQL for todos, categories, comments and attachment
+metadata. It does not currently store general settings, app configuration or
+Clerk users in those tables. Redis is used for jobs, not a demonstrated todo
+response cache. The in-process React Query cache is a different cache entirely.
 
-### React 19 & Vite 7 (Frontend)
-* **What**: React is the industry-standard UI library for building component-driven interfaces. Vite acts as the build tool and development server, replacing traditional Webpack setups.
-* **Why**: React 19 brings outstanding rendering optimization and async state management improvements. Vite offers incredibly fast Hot Module Replacement (HMR) to create an instantaneous feedback loop during development.
-* **Its Job**: Renders the complete web application, captures user actions, retrieves data from the API, and enforces UI-level state logic.
+## 3. Startup Is Not a Request
 
-### ts-rest & Zod (Contract-First Design)
-* **What**: `ts-rest` is an elegant framework for building type-safe, contract-driven APIs. `Zod` is a schema declaration and validation library for TypeScript.
-* **Why**: To bypass the classic "frontend got out of sync with response schemas" problem. By having a shared contract package, the frontend and backend are bound to the exact same schema. Any change automatically breaks compilation, making it impossible to accidentally ship incompatible API payloads.
-* **Its Job**: The contract file is declared in [packages/openapi/src/contracts/index.ts](packages/openapi/src/contracts/index.ts). High-performance tools parse these schemas to output the [apps/backend/static/openapi.json](apps/backend/static/openapi.json) file and enforce compilation checks in the frontend.
+Read [main.go](../../apps/backend/cmd/tasker/main.go):
 
-### PostgreSQL & pgx/v5
-* **What**: PostgreSQL is an enterprise-grade Relational Database Management System (RDBMS). `pgx` is a pure-Go driver and connection pool implementation for PostgreSQL.
-* **Why**: Relational structured databases provide strong ACID guarantees, powerful indexing, and rich relational queries. `pgx` is the fastest, safest, and most idiomatic driver available for Go, with full support for connection pooling and tracer intercepts.
-* **Its Job**: Persists all foundational state—such as user settings, transactional business data, and application configurations.
+1. Load case-sensitive `TASKER_` environment configuration.
+2. Construct logging and optional New Relic integration.
+3. Apply embedded migrations only when `Primary.Env != "local"`.
+4. Create the DB pool, Redis client and Asynq worker in `server.New`.
+5. Construct repositories, services, handlers and router in that order.
+6. Configure timeouts and start HTTP listening.
+7. Wait for interrupt, then attempt graceful shutdown with a fresh timeout context.
 
-### Database Migrations with Tern
-* **What**: Tern is a standalone, light, database-migration tool designed exclusively for PostgreSQL.
-* **Why**: Managing database changes via manual SQL executions is error-prone. Tern tracks changes in progressive SQL scripts sequentially.
-* **Its Job**: Standardizes migrations using `.sql` scripts inside [apps/backend/internal/database/migrations](apps/backend/internal/database/migrations). When the backend boots, if it is in an environment like staging or production, Tern auto-runs outstanding SQL scripts sequentially to keep the schema strictly up to date.
+Constructors store references to shared resources. They do not cause a new pool
+for every request. A handler receives a fresh request context and DTO while the
+server, repositories and clients continue to be shared.
 
-### Redis & Asynq
-* **What**: Redis is an open-source, in-memory key-value data structure store. `Asynq` is a Golang library for concurrent background task processing backed by Redis.
-* **Why**: Certain heavy-duty tasks (like sending transactional onboarding emails, generating reports, or hitting external APIs) shouldn't block the user's HTTP request-response cycle. Offloading these to a queue guarantees instant HTTP response times for users.
-* **Its Job**:
-  * Redis acts as the message broker storing task metadata.
-  * `Asynq` runs highly persistent consumer workers that fetch tasks, handle custom retry counts (exponential backoff), route them to matching queues (e.g., `critical` or `default`), and process them safely.
+The [server guide](../../apps/backend/internal/server/README.md) documents exact
+shutdown ordering and remaining lifecycle risks. A startup DB ping is not a
+feature test or proof that every migration has been applied.
 
-### User Authentication with Clerk
-* **What**: A complete User Management and Identity-as-a-Service (IDaaS) platform.
-* **Why**: Building secure authentication, reset passwords, session cookies, MFA, and organization-scoped roles from scratch is complex and carries high security risks. Clerk provides pre-built hooks and immediate security compliance.
-* **Its Job**: 
-  * The frontend uses `@clerk/clerk-react` to display sign-in widgets and fetch unique JSON Web Tokens (JWT).
-  * The backend utilizes a JWKS verification middleware in [apps/backend/internal/middleware/auth.go](apps/backend/internal/middleware/auth.go) to validate JWTs cryptographically without executing an external network call on every request, populating custom contextual variables like `user_id` and `user_role`.
+## 4. Layers and Ownership
 
-### Transactional Emails with Resend
-* **What**: An modern transactional email delivery gateway.
-* **Why**: High email inbox-deliverability, beautiful analytics, and friendly Go SDKs.
-* **Its Job**: Outgoing transactional emails (like welcome prompts) are rendered into a string on the background threads and pushed over HTTP using Resend's API.
+| Layer | Question it answers | Example |
+| --- | --- | --- |
+| Router/middleware | Which handler, and may this caller enter? | `/api/v1/todos`, Clerk auth |
+| Handler | How does HTTP become an operation? | Bind DTO, get user ID, return 201 |
+| DTO/validation | Is input structurally acceptable? | Required title, allowed sort |
+| Service | May these records be connected; what happens first? | Check category owner before insertion |
+| Repository | Which SQL reads/writes the values? | Parameterized insert and row mapping |
+| Database | Which stored invariants hold even under concurrency? | Unique category name per owner |
+| Model | What Go shape carries a result? | Todo versus populated Todo |
 
-### Observability with New Relic APM & Zerolog
-* **What**: New Relic is an Application Performance Monitoring (APM) system. `Zerolog` is a superfast, JSON-structured logger for Go.
-* **Why**: In production, tracking latency, database query times, Redis round-trips, and trace propagation is crucial. Full APM tracing connects these seamlessly.
-* **Its Job**: 
-  * Integrations inject timing spans into Echo requests (`nrecho`), database sessions (`nrpgx5`), and Redis interactions (`nrredis`).
-  * `Zerolog` formats all standard statements into JSON, enabling structured log forwarders to grep, filter, and trace easily.
+This is practical layered architecture. Repositories depend on `server.Server`,
+services accept `echo.Context`, and some rules remain in repositories. Models
+are shared data shapes, not a layer that receives a network request after SQL.
 
-### Integration Testing with Testcontainers
-* **What**: Testcontainers is an automated testing package that allows spawning actual temporary Docker containers for PostgreSQL and Redis directly from Go tests.
-* **Why**: Unit tests with mock databases often fail to catch syntax errors or actual PostgreSQL behaviors. Real integration testing guarantees migrations and queries behave exactly as expected.
-* **Its Job**: spins up active Postgres and Redis Docker instances during runtime of [apps/backend/internal/testing](apps/backend/internal/testing) tests, and tears them down cleanly upon completion.
+## 5. Build-Time and Runtime Contracts
 
----
+The [shared package guide](../../packages/README.md) diagrams schema compilation,
+OpenAPI generation and email export. None generate Go endpoints. The frontend
+and backend meet at HTTP JSON, not at a shared language type system.
 
-## 3. Communication and Data Connection Layout
+Frontend configuration is compiled into client code from explicitly selected
+values. It is public. Backend `.env` values configure the Go process and can
+include secrets. Ignoring a file in Git does not make values safe if they have
+already been logged, pasted or bundled.
 
-To keep code decoupled, dependencies are initialized once and passed via **Constructor Dependency Injection** inside [apps/backend/cmd/go-tasker/main.go](apps/backend/cmd/go-tasker/main.go):
+## 6. Verify One Boundary at a Time
 
-1. **Server Boot**: `config.LoadConfig()` parses environment variables.
-2. **Database Initiation**: `database.New()` sets up the core PostgreSQL connection pool. New Relic tracers are attached directly to intercept database calls.
-3. **Queue Bootstrap**: `job.NewJobService()` initializes the `Asynq` queue client and worker pool connected to Redis.
-4. **Clean Layering wire-up**:
-   * Repositories are built with access to the database pool.
-   * Services are built with access to repositories and the background job service.
-   * Handlers are built with access to services.
-   * Router loads Handlers and applies authentication/tracing middlewares.
+| Check | Evidence it gives |
+| --- | --- |
+| Go build/vet | Compilation and selected static problems |
+| Frontend `tsc -b` | Referenced TypeScript projects check |
+| Vite build | Browser assets can be bundled |
+| `/status` | Current implemented dependency probes, with Redis caveat |
+| Repository integration test | Particular SQL/constraint/mapping behavior |
+| Authenticated browser workflow | Particular UI-to-API behavior |
+| Backup/restore or deployment exercise | Particular operational recovery behavior |
 
-This strict downward dependency chain (Handlers → Services → Repositories) makes sure that business logic, persistence layers, and routing concerns never leak into one another.
+These docs were written from source inspection. They do not claim the final
+three kinds of verification have been completed. Continue with
+[real request walkthroughs](request_walkthroughs.md).

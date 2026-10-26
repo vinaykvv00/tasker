@@ -34,6 +34,20 @@ This illustrative statement chooses a level, adds a structured field, then emits
 
 A request ID relates logs for one HTTP request. A trace ID can relate spans across instrumented operations/services. Neither is an authentication credential.
 
+```mermaid
+flowchart LR
+	Request[HTTP request] --> Context[Request ID and contextual logger]
+	Context --> Handler[Handler timing and errors]
+	Handler --> SQL[pgx query tracing]
+	Context --> Output[Console or JSON logs]
+	SQL -. when configured .-> APM[New Relic transaction and spans]
+```
+
+To investigate a failed create: inspect the browser's request/response, find
+its request ID in API logs, follow service/repository context, and identify
+whether failure occurred before SQL, during SQL, or while mapping the result.
+Do not begin by changing timeout values without locating the failure boundary.
+
 ## Read Logs Without Over-Interpreting Them
 
 `INF` is information, `WRN` a warning, and `ERR` an error; `FTL` ends the process. A 404 at an unregistered path is different from a database outage. Match the request ID and the returned HTTP response before assuming two messages represent two failures.

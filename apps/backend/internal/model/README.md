@@ -11,6 +11,7 @@ Models describe Go data. DTOs (data transfer objects) describe input for specifi
 | [base.go](base.go) | Shared ID/timestamps and generic `PaginatedResponse` |
 | [todo/todo.go](todo/todo.go) | Todo fields, named status/priority types, metadata, populated responses, statistics |
 | [todo/dto.go](todo/dto.go) | Create/update/detail/list/delete/statistics inputs and validation |
+| [todo/attachment.go](todo/attachment.go) | Attachment metadata, not stored binary contents |
 | [category/category.go](category/category.go) | A category row |
 | [category/dto.go](category/dto.go) | Category input validation and list defaults |
 | [comment/comment.go](comment/comment.go) | A comment row linked to a Todo |
@@ -21,12 +22,12 @@ The subfolders are separate packages so callers can write `todo.Todo`, `category
 ## Three Representations of One Field
 
 ```go
-UserId string `json:"userId" db:"user_id"`
+UserID string `json:"userId" db:"user_id"`
 ```
 
 | Representation | Consumer | Name |
 | --- | --- | --- |
-| Go field | Your Go code | `UserId` |
+| Go field | Your Go code | `UserID` |
 | JSON property | JSON encoder/decoder and frontend | `userId` |
 | SQL column | pgx struct mapper | `user_id` |
 
@@ -42,7 +43,8 @@ flowchart LR
     Model --> Output[JSON response]
 ```
 
-This is the intended feature boundary, not confirmation that Todo handlers already exist.
+This boundary is used by the current feature handlers. Models are values within
+one process, not separate services or network calls.
 
 ## Why Input and Output Types Differ
 
@@ -73,7 +75,7 @@ Named types such as `type Status string` improve readability; they are not close
 ## Stored vs. Populated vs. Summary Models
 
 - `Todo` corresponds to one row, including the embedded `model.Base` fields.
-- `PopulatedTodo` embeds that row and adds category, children, and comments assembled by a query.
+- `PopulatedTodo` embeds that row and adds category, children, comments and attachments assembled by a query.
 - `TodoStats` corresponds to aggregate counts, not a physical table.
 - `Metadata` is Go's typed view of the JSONB value; it is not another SQL table.
 - `PaginatedResponse[T]` wraps rows and page/count information. It does not run pagination by itself.
@@ -82,7 +84,10 @@ Nested JSON produced by SQL is decoded using JSON names; ordinary result columns
 
 ## Current Caveats, Not Patterns to Copy
 
-In [todo/dto.go](todo/dto.go), the create-title validation tag is malformed and several validator tags contain leading spaces. Some rules can be ignored or cause an unknown-validator panic. The sort whitelist also spells `title` as `tittle`. These need tests and fixes before those DTOs can be treated as a reliable boundary.
+In [todo/dto.go](todo/dto.go), create-title validation is now
+`required,min=1,max=255`; the sort allowlist includes `title`. Earlier notes about
+malformed tags and `tittle` are obsolete. Title limits, allowed values and date
+handling still need tests across the independent Go and TypeScript definitions.
 
 UUID validation on a `uuid.UUID` field needs care: it is an array-backed Go type, while the `uuid` validator is normally used with strings. Test binding, zero UUIDs, and actual validation rather than assuming a valid-looking tag proves correctness.
 

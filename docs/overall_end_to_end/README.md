@@ -1,59 +1,107 @@
-# End-to-End Architecture & Guide
+# Tasker: The Complete Learning Path
 
-Welcome to the **Go-tasker** end-to-end documentation! Since you have just cloned or forked this repository and are a beginner to this project and tech stack, this guide is crafted specifically for you.
+This guide explains the project currently in this repository: what each part
+does, why it is separate, how data moves, and where the implementation is still
+incomplete. It is written for learning after following a tutorial or using code
+assistance, not for memorizing generated code.
 
-This monorepo is a production-ready template designed with clean architecture, enterprise-level performance, solid type safety, background queues, and complete system observability. It is much more than a simple prototype; it implements real-world patterns used by experienced software engineering teams.
+Reviewed against source on **2026-10-25**. This is a source-based explanation,
+not proof of passing runtime tests or production readiness. Backend tests and
+deployment are still later work. The local reference checkout is not the
+application being documented.
 
----
+## Start Here
 
-## Guide Index
+If you have 30 minutes, read the architecture, follow todo creation once, then
+explain it aloud without looking. Do not start by reading every UI primitive or
+logging helper.
 
-To help you learn systematically, we have broken down this documentation into three core chapters:
+| Order | Read | You should be able to explain |
+| --- | --- | --- |
+| 1 | [Architecture and stack](architecture_and_tech_stack.md) | Processes, dependencies and storage boundaries |
+| 2 | [Go reading basics](../../apps/backend/docs/go-reading-basics.md) | Pointers, methods, interfaces, generics and contexts |
+| 3 | [Backend reading path](../../apps/backend/docs/README.md) | Startup and each backend layer |
+| 4 | [Database chapters](../database/README.md) | Schema, SQL, pgx, migrations and query execution |
+| 5 | [Shared packages](../../packages/README.md) | Zod, contracts, build output and email artifacts |
+| 6 | [Frontend overview](../frontend/README.md) and [workflows](../frontend/state_and_workflows.md) | Routing, state, forms, transport and caching |
+| 7 | [Real request walkthroughs](request_walkthroughs.md) | Create/list/edit/upload and error return paths |
+| 8 | [Cron and queued work](../../apps/backend/internal/cron/README.md) | Scheduling versus durable queue consumption |
+| 9 | [Feature checklist](how_to_add_features.md) | How to extend one behavior across the needed layers |
+| 10 | [Learning workbook](learning_workbook.md) | How to practice, debug and test understanding |
 
-1. **[docs/overall_end_to_end/architecture_and_tech_stack.md](docs/overall_end_to_end/architecture_and_tech_stack.md)**
-   * Learn *what* technologies are used, *why* they were chosen, *how* they connect, and what their specific "job" is in the tasker.
-   * Understand the flow of requests from the user's browser, through authentication, routing, services, background jobs, database, and observability agents.
+For setup commands, use [local development](../../apps/backend/docs/local-development.md).
+For design tradeoffs, read [what the extra layers buy you](how_it_differs_from_todo_app.md).
 
-2. **[docs/overall_end_to_end/how_it_differs_from_todo_app.md](docs/overall_end_to_end/how_it_differs_from_todo_app.md)**
-   * A detailed contrast showing how a production-ready architecture differs fundamentally from a traditional, naive frontend/backend tutorial "TODO app".
-   * Covers database connection reliability, background task offloading, contract-first API safety, structured logging vs. stdout `println`, and automated integration testing.
+## The One-Picture Model
 
-3. **[docs/overall_end_to_end/how_to_add_features.md](docs/overall_end_to_end/how_to_add_features.md)**
-   * A step-by-step developer playbook detailing how to build and integrate any new feature end-to-end.
-   * Walks through schema definitions, contract composition, running codegen, writing Go database migrations, exposing backend services/handlers, routing, and wiring React query hooks on the frontend.
+```mermaid
+flowchart LR
+    Browser[React browser app] -->|HTTP and bearer token| API[Go Echo API]
+    Clerk[Clerk identity] --> Browser
+    Clerk --> API
+    API --> DB[(PostgreSQL: relational records)]
+    API --> S3[(S3-compatible storage: file bytes)]
+    Cron[Separate cron command] --> DB
+    Cron --> Redis[(Redis: queued jobs)]
+    Redis --> Worker[Asynq worker in API process]
+    Worker --> Mail[Go templates and Resend]
+    API -. telemetry .-> Logs[Zerolog and optional New Relic]
+```
 
----
+Backend layers are packages inside one Go process, not independent microservices.
+Models describe values moving between them, not an extra network hop. TypeScript
+packages are local dependencies; they do not run Go code.
 
-## Core Directories & Navigating the Monorepo
+## Current Feature Inventory
 
-The codebase is organized as a monorepo managed with **Turborepo** and **Bun Workspaces**. Here is a high-level breakdown of the folders in this repository:
+| Area | Implemented in source | Do not assume |
+| --- | --- | --- |
+| Todos | CRUD, status, priority, dates, root lists, filters, statistics | All combinations of SQL joins or hierarchy updates are tested |
+| Categories | List/create/update/delete and owner-scoped uniqueness | A public category-detail GET endpoint exists |
+| Comments | Nested list/create and individual update/delete | Foreign keys alone prove owner access |
+| Attachments | Multipart upload, metadata, delete, temporary download URL | Storage and database changes are atomic |
+| Browser | Auth, dashboard, forms, query hooks, theme and pages | Every displayed control is functional |
+| Settings/bulk UI | Some presentation and local selection | Import/export/delete-all, notification preferences or bulk mutations work |
+| Background work | Reminder/report queue tasks, cron commands and auto-archive | Jobs are automatically scheduled or emails are sent exactly once |
+| Testing | PostgreSQL test helpers | Feature coverage exists; no backend `_test.go` files are present here |
+| Deployment | Local infrastructure and runtime code | Hardened deployment, backup/restore and monitoring have been verified |
 
-* **[apps/backend](apps/backend)**:
-  * Written in Go 1.24+ using the Echo web framework.
-  * Employs clean architecture layers (Handlers → Services → Repositories → Models).
-  * Manages database migrations with Tern, jobs with Asynq, and analytics with New Relic.
+## How to Read a Layer
 
-* **[apps/frontend](apps/frontend)**:
-  * Built with React 19, Vite 7, and TailwindCSS v4.
-  * Uses TanStack React Query for data fetching, Axios for the underlying HTTP requests, and Clerk for user registration and authentication.
+Ask the same questions for each function:
 
-* **[packages/openapi](packages/openapi)**:
-  * The Single Source of Truth (SSOT) of the API.
-  * Expresses endpoints as TypeScript definitions using ts-rest and packages them as an NPM workspace dependency.
+1. Who calls it, and when?
+2. Which values are trusted, user-supplied or generated?
+3. Does it read, write, allocate, enqueue or call an external service?
+4. What result does it return, and who consumes it?
+5. Which failure can occur here, and what has already happened by then?
+6. What focused check would demonstrate correct behavior?
 
-* **[packages/zod](packages/zod)**:
-  * Houses shared Zod validation schemas. Used by ts-rest to validate request parameters, bodies, and responses before compilation and at runtime.
+Use the source links beside each explanation. If the code differs after a later
+change, update the explanation rather than forcing the code to match old prose.
 
-* **[packages/emails](packages/emails)**:
-  * TypeScript templates using React Email for beautiful, standardized emails that are rendered and delivered transactional-style.
+## Known Boundaries Worth Studying
 
----
+These are not an exhaustive security audit. The detailed guides explain the
+source observations and why they matter:
 
-## Getting Started Strategy for Beginners
+- Go DTOs and TypeScript contracts are independent; compilation does not prove
+  SQL, route, nullability or response agreement.
+- Todo populated joins can duplicate nested rows; PATCH lacks explicit presence
+  tracking for some nullable fields.
+- Uploads and object deletion have partial-failure/cleanup risks.
+- Reminder reruns can enqueue duplicates; some UI settings are placeholders.
+- The OpenAPI runtime export has a path mismatch; Vite aliases can hide it.
+- Plain frontend `tsc` does not check its referenced projects; use `tsc -b`.
+- Local Compose uses broadly exposed, passwordless data services. Review network
+  and credential settings before running it on a shared network.
 
-If you are new to Go, React, SQL, or Docker:
-1. Start by executing the backend locally and querying the `/status` endpoint to make sure you can see a `"healthy"` response.
-2. Read the **[Chapter 1: Tech Stack & Connections](docs/overall_end_to_end/architecture_and_tech_stack.md)** to grasp how components like Redis and PostgreSQL work together.
-3. Keep the **[Chapter 3: How-To Playbook](docs/overall_end_to_end/how_to_add_features.md)** open as you build your very first endpoint (e.g., adding an API that lists resources or logs statistics).
+No application code, secrets, tests or deployment configuration are changed by
+these guides. No generator needs to run merely to read them.
 
-You've got a fantastic, modern codebase in front of you. Let's dive in!
+## Your First Session
+
+Read the create-todo walkthrough, locate its form and SQL, then close the guide.
+Draw the path from button click to stored row and back. Mark identity, validation,
+default values and errors. Reopen the source only to correct your drawing.
+Continue with the workbook when you can explain that path in your own words.

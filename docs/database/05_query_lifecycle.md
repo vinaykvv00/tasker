@@ -18,16 +18,17 @@ flowchart TD
     Listen --> Request[Handle each request using shared dependencies]
 ```
 
-## Planned Category Request
+## Implemented Category Request
 
-The repository is implemented; the Category HTTP handler and service are not yet wired. This diagram describes the intended connection, not a working route to call today.
+`POST /api/v1/categories` connects the following layers. This diagram follows
+the current source; use a disposable database to verify actual behavior.
 
 ```mermaid
 sequenceDiagram
     participant FE as Browser
-    participant HTTP as Future authenticated route / handler
-    participant Service as Future Category service
-    participant Repo as Existing CategoryRepository
+    participant HTTP as Authenticated route and handler
+    participant Service as Category service
+    participant Repo as CategoryRepository
     participant PG as pgxpool / PostgreSQL
     FE->>HTTP: JSON body and authentication token
     HTTP->>HTTP: Verify identity; bind and validate a fresh DTO

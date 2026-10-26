@@ -162,13 +162,13 @@ migrations:up:
   deps: [ confirm ]
   cmds:
     - echo 'Running up migrations...'
-    - tern migrate -m ./internal/database/migrations --conn-string {{.tasker_DB_DSN}}
+    - tern migrate -m ./internal/database/migrations --conn-string {{.TASKER_DB_DSN}}
 ```
 
 Run it from the backend directory with the DSN for the intended database. This example matches the current local passwordless setup, not production:
 
 ```bash
-task migrations:up tasker_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
+task migrations:up TASKER_DB_DSN="postgres://postgres@localhost:5432/tasker?sslmode=disable"
 ```
 
 Note the `deps: [ confirm ]` — it prompts for confirmation before touching the database:
@@ -314,7 +314,7 @@ The raw Tern commands below also need the migration path and connection string, 
 | Command | Purpose |
 | :--- | :--- |
 | `task migrations:new name=foo` | Create `NNN_foo.sql` |
-| `task migrations:up tasker_DB_DSN="$local_dsn"` | Apply all pending migrations after confirmation |
+| `task migrations:up TASKER_DB_DSN="$local_dsn"` | Apply all pending migrations after confirmation |
 | `tern migrate --destination N` | Move to version N; moving backward requires down SQL and can destroy data |
 | `tern status` | Show current migration status |
 | `tern print-migrations` | List all migrations |

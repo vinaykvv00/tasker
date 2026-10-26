@@ -8,12 +8,28 @@ A handler understands HTTP: route parameters, JSON bodies, query strings, respon
 
 | File | Purpose |
 | --- | --- |
-| [handlers.go](handlers.go) | Registry containing only Health and OpenAPI handlers |
+| [handlers.go](handlers.go) | Constructs Health, OpenAPI, Todo, Category and Comment handlers |
 | [health.go](health.go) | Directly checks the DB and Redis and returns JSON |
 | [openapi.go](openapi.go) | Reads the local OpenAPI HTML file and returns HTML |
 | [base.go](base.go) | Shared handler state and generic wrappers for JSON, no-content, and file responses |
+| [todo.go](todo.go) | Todo CRUD, statistics, multipart uploads and attachment download URLs |
+| [category.go](category.go) | Category CRUD and list endpoints |
+| [comment.go](comment.go) | Add, list, update and delete comments |
 
-There are no Tasker feature handlers yet. `NewHandlers` receives `services` but does not currently use it. A feature needs both a handler and explicit route registration.
+These features are wired through the service registry and versioned routes. A
+file does not register itself: follow `NewHandlers` and the router registration.
+
+## Follow CreateTodo
+
+`TodoHandler.CreateTodo` constructs a fresh `CreateTodoPayload` inside each
+request. `Handle` binds and validates it, then invokes a typed callback. The
+callback obtains `middleware.GetUserID(c)` and invokes `TodoService.CreateTodo`.
+Success returns the stored Todo with HTTP 201. The body does not choose its owner.
+
+Updates return 200; deletes use `HandleNoContent` and return 204, without JSON.
+Uploads use `MultipartForm()`, reject zero or multiple entries in the `file`
+field, and pass the file header to the service. The handler does not store file
+bytes in PostgreSQL.
 
 ## First Example: CheckHealth
 
@@ -54,8 +70,17 @@ Returning an error lets Echo invoke the configured global error handler. Avoid w
 
 ## Important Detail Before Using These Helpers
 
-The helpers currently close over the supplied `req` value. If a pointer is allocated once at route registration, requests reuse that same object: fields can leak between requests and concurrent binding can race. Each request needs a fresh mutable DTO. Treat the existing wrappers as code to review before wiring new feature routes, not proof that request allocation is already safe.
+The helpers close over the supplied `req` value. Current feature methods invoke
+them inside each request with a fresh DTO pointer. Preserve that pattern:
+constructing a wrapper once at registration around a shared mutable pointer
+would reuse input across requests and introduce races.
 
-For a future Todo handler, the checklist is: fresh DTO, successful bind/validation/defaults, authenticated user ID, request-scoped Go context, service call, correct success status, returned errors, and tests for invalid input and another user's resource.
+For another handler, the checklist is: fresh DTO, successful bind/validation/defaults, authenticated user ID, request-scoped Go context, service call, correct success status, returned errors, and tests for invalid input and another user's resource.
 
-For the binding implementation, see [../validation/README.md](../validation/README.md). For the missing business layer, see [../service/README.md](../service/README.md).
+For binding, see [../validation/README.md](../validation/README.md). For business decisions, see [../service/README.md](../service/README.md).
+
+## Practice
+
+Trace a missing title and then a valid title with someone else's category ID.
+Which failure is decided by the DTO, and which by the service? Locate the code
+that chooses each HTTP status, not just the error message.

@@ -6,8 +6,10 @@ Previous: [03_migrations_with_tern.md](03_migrations_with_tern.md). These are th
 
 - [../../apps/backend/internal/database/migrations/001_setup.sql](../../apps/backend/internal/database/migrations/001_setup.sql): `camel()` and `trigger_set_updated_at()` functions.
 - [../../apps/backend/internal/database/migrations/002_todos.sql](../../apps/backend/internal/database/migrations/002_todos.sql): three tables plus indexes, triggers, and a no-self-parent constraint.
+- [../../apps/backend/internal/database/migrations/003_attachments.sql](../../apps/backend/internal/database/migrations/003_attachments.sql): attachment metadata, indexes and timestamp trigger.
 
-Both current files contain forward SQL only. Helper functions must exist before the second migration attaches triggers that call them.
+All three current files contain forward SQL only. Helpers must exist before
+later migrations attach triggers that call them. Do not assume rollback SQL exists.
 
 ## Relationships
 
@@ -16,6 +18,7 @@ erDiagram
     TODO_CATEGORIES o|--o{ TODOS : categorizes
     TODOS o|--o{ TODOS : parents
     TODOS ||--o{ TODO_COMMENTS : has
+    TODOS ||--o{ TODO_ATTACHMENTS : has
     TODO_CATEGORIES {
         uuid id PK
         text user_id
@@ -42,9 +45,20 @@ erDiagram
         text user_id
         text content
     }
+    TODO_ATTACHMENTS {
+        uuid id PK
+        uuid todo_id FK
+        text uploaded_by
+        text download_key
+        text name
+        bigint file_size
+        text mime_type
+    }
 ```
 
-All three tables also have `created_at` and `updated_at`. `user_id` is text supplied by the application; these migrations do not create a users table or a foreign key to Clerk.
+All four tables have `created_at` and `updated_at`. `user_id` and `uploaded_by`
+are text supplied by the application; these migrations create no users table
+or foreign key to Clerk.
 
 ## Categories
 
@@ -79,9 +93,19 @@ Every `todo_comments` row has a required Todo reference and content. Deleting a 
 
 The comment and its Todo can still have different `user_id` values under these constraints. Similarly, a Todo can reference another user's category or parent. The service/write path must enforce those ownership relationships, or the schema must be strengthened deliberately.
 
+## Attachments
+
+`todo_attachments` belongs to a todo with `ON DELETE CASCADE`. `download_key`
+identifies an object in S3-compatible storage; it is not a permanent public URL.
+`file_size` and `mime_type` are nullable metadata. The bucket holds the bytes.
+
+Deleting a todo cascades its attachment **rows**, not external objects. Database
+constraints cannot call S3 cleanup. Follow the service guide for that separate
+lifecycle and its current failure cases.
+
 ## Functions and Triggers
 
-`trigger_set_updated_at()` assigns `CURRENT_TIMESTAMP` to the new row before update. All three tables attach it. PostgreSQL's `CURRENT_TIMESTAMP` is the transaction-start time, so multiple changes inside one transaction can share it.
+`trigger_set_updated_at()` assigns `CURRENT_TIMESTAMP` to the new row before update. All four tables attach it. PostgreSQL's `CURRENT_TIMESTAMP` is the transaction-start time, so multiple changes inside one transaction can share it.
 
 `camel(input_row anyelement)` converts a composite row to JSONB, loops over its top-level fields, transforms snake_case names into camelCase, and assembles a result object. `anyelement` lets the same function receive different row types. `NEW`, `RETURN NEW`, and `RETURNS TRIGGER` belong to PostgreSQL trigger execution, not Go.
 

@@ -28,7 +28,25 @@ Middleware order matters. A logger created before authentication cannot initiall
 
 This authenticates the caller. It does not by itself prove that a particular Todo, category, or comment belongs to them, and storing roles/permissions does not enforce a role policy. Services and user-scoped SQL still need authorization checks.
 
-At this snapshot [../router/router.go](../router/router.go) constructs Auth but does not attach `RequireAuth` to any feature route. The `/api/v1` group is empty.
+The [versioned route registrations](../router/v1/v1.go) attach `RequireAuth` to
+todo, category and comment groups. System status/docs routes remain outside
+those authenticated groups.
+
+```mermaid
+sequenceDiagram
+	participant Browser
+	participant Middleware as Clerk middleware
+	participant Handler
+	participant Service
+	Browser->>Middleware: Bearer token
+	alt token/session claims unavailable
+		Middleware-->>Browser: 401
+	else authenticated
+		Middleware->>Handler: Set user_id and continue
+		Handler->>Service: Trusted identity and validated input
+		Service->>Service: Check resource ownership
+	end
+```
 
 ## Two Contexts, Not One
 
@@ -48,3 +66,9 @@ At this snapshot [../router/router.go](../router/router.go) constructs Auth but 
 CORS is a browser-origin policy, not login. Security headers are useful defaults, not a complete security policy. The in-memory rate limiter operates per application process; it is not a Redis-backed global limit shared across replicas.
 
 For the error journey and response fields, see [../errs/README.md](../errs/README.md).
+
+## Practice
+
+Explain why an authenticated user must still be denied another user's todo.
+Then compare a browser CORS failure with a server 401: which one can also affect
+curl, and which one is enforced by the browser?

@@ -17,6 +17,21 @@ Back to [../../docs/README.md](../../docs/README.md). The implementation is [uti
 
 The handler helper invokes this function. A repository called directly does not inherit these checks automatically.
 
+```mermaid
+flowchart LR
+	Input[HTTP input] --> Bind[Bind to DTO]
+	Bind --> Rules[Validate method]
+	Rules --> Defaults[Defaults where the DTO supplies them]
+	Defaults --> Callback[Handler callback]
+	Bind -. parse failure .-> Error[Bad request or current error-path defect]
+	Rules -. invalid value .-> Error
+```
+
+Todo list defaults are page 1, limit 20, sort `created_at`, order `desc`.
+Category list defaults are page 1, limit 50, sort `name`, order `asc`.
+This difference is intentional in the current DTOs; do not assume every list
+uses the same default page size.
+
 ## Field Errors and Custom Rules
 
 `extractValidationErrors` translates validator tags such as `required`, `min`, `max`, and `oneof` into readable messages. `CustomValidationErrors` provides another expected error format for application-defined field checks. `IsValidUUID` is a regex helper; it is not a database lookup or authorization check.

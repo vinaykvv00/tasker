@@ -37,6 +37,17 @@ This helper does **not** call production `server.New`, start an HTTP listener, s
 
 Do not claim integration coverage because a helper exists. Go runs functions in test files that invoke it. An empty test run or a startup ping is not a CRUD test.
 
+At this documentation snapshot, no `_test.go` files are present under the actual
+backend app. Tests in a separate reference checkout are not tests of this tree.
+The table below describes a future test plan, not completed coverage.
+
+```mermaid
+flowchart LR
+	Unit[DTO and pure-rule tests] --> Repo[Repository tests with disposable PostgreSQL]
+	Repo --> HTTP[Handler and router tests]
+	HTTP --> Browser[Browser workflow tests]
+```
+
 ## Transaction Helpers: Read the Implementation
 
 `WithTransaction` begins a transaction, invokes the callback, and **commits on success**, despite its current comment saying it rolls back afterward. The deferred rollback covers error/early-return paths.
@@ -52,7 +63,7 @@ For repository integration tests, use an isolated disposable database or deliber
 3. Verify another user's ID cannot read/update/delete it.
 4. Verify duplicate category names for one user are rejected but different users can share a name.
 5. Exercise Todo's more complex joins with multiple children and comments.
-6. Add service tests for related-record ownership before exposing handlers.
+6. Add service tests for related-record ownership used by the existing handlers.
 7. Test invalid JSON, invalid IDs, missing authentication, not found, and successful responses through the router.
 
 From the backend directory, use `go test ./internal/model/...` for the model packages or `go test ./internal/repository/...` for repository tests once added. `go test -race` can help detect shared request-state races. Tests with build constraints need their declared tags; these helpers do not automatically require an `integration` tag.

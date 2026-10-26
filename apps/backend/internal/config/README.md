@@ -28,15 +28,19 @@ Run from the backend directory so relative dotenv, static, and template paths re
 An example setting, not a secret:
 
 ```dotenv
-tasker_DATABASE.HOST="localhost"
+TASKER_DATABASE.HOST="localhost"
 ```
 
-1. `env.Provider("tasker_", ".", ...)` selects variables with that exact prefix.
-2. `TrimPrefix` removes `tasker_`; `ToLower` turns the rest into `database.host`.
+1. `env.ProviderWithValue("TASKER_", ".", ...)` selects variables with that exact prefix.
+2. `TrimPrefix` removes `TASKER_`; `ToLower` turns the rest into `database.host`.
 3. Koanf's `.` delimiter makes a nested `database` -> `host` setting.
 4. `koanf:"database"` and `koanf:"host"` tags map it to `cfg.Database.Host`.
 
-Underscores inside a field name stay underscores. `tasker_DATABASE_HOST` is not equivalent to `tasker_DATABASE.HOST` in this loader. These dotted names are accepted by dotenv but are not ordinary Bash variable identifiers, so do not `source` the file or try `export tasker_DATABASE.HOST=...`.
+Underscores inside a field name stay underscores. `TASKER_DATABASE_HOST` is not equivalent to `TASKER_DATABASE.HOST` in this loader. These dotted names are accepted by dotenv but are not ordinary Bash variable identifiers, so do not `source` the file or try `export TASKER_DATABASE.HOST=...`. The old lowercase prefix is not selected by the current loader.
+
+The loader also scans values shaped like `map[...]`, flattens them with
+`parseMapString`, and applies them with `k.Set`. Ordinary dotted assignments do
+not need that compatibility branch. Learn the scalar path first.
 
 ## Validation Is Not Connectivity
 
@@ -61,3 +65,9 @@ If all values appear missing, first check the working directory, dotenv syntax, 
 Use [../../.env.sample](../../.env.sample) as a template, not proof that every sample value works unchanged. Keep local credentials in your ignored environment file or a secret manager, never in Markdown examples. Rotate credentials that have been exposed in chat, logs, or source control.
 
 The Taskfile migration DSN is a separate CLI input. The Go configuration loader does not automatically configure the external Tern executable.
+
+## Practice
+
+Find `CronConfig`, then the job that consumes `ReminderHours`. Explain why a
+default assigned only when `Cron == nil` does not fill every zero field in a
+partially supplied cron section. Do not print credentials while tracing values.
